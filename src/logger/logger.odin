@@ -14,6 +14,8 @@ LogType :: enum {
 	FATAL,   // The project cannot continue
 }
 
+// TODO: use categories that better reflects the build pipeline
+// ARGS, CONFIG, EXPORT_PRESET, PREPROCESSOR, etc
 LogCategory :: enum {
 	CONFIG,
 	SCRIPT,
