@@ -1,32 +1,35 @@
 {
-	"folders":
-	[
-		{
-			"path": ".",
-		},
-		{
-			"path": "C:\\Users\\Thomas\\Applications\\odin\\core",
-		},
-		{
-			"path": "C:\\Users\\Thomas\\Applications\\odin\\vendor\\lua"
-		},
-	],
-	"build_systems": [
-		{
-			"name": "gdbuild",
-			"cmd": "odin build . -out:../gdbuild.exe",
-			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
-		}
-	],
-	"settings":
-	{
-		"auto_complete": true, // when false: press ctrl + space to open suggestions
-		"LSP":
-		{
-			"odin":
-			{
-				"enabled": true,
-			},
-		},
-	},
+    "folders":
+    [
+        {
+            "path": ".",
+        },
+    ],
+    "build_systems": [
+        {
+            "name": "gdbuild",
+            "cmd": "odin build . -out:../gdbuild.exe",
+            "file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+            "windows": {
+                "cmd": ["odin", "build", "src/", "-out:gdbuild.exe", "-debug"]
+            },
+            "osx": {
+                "cmd": ["odin", "build", "src/"]
+            },
+            "linux": {
+                "cmd": ["odin", "build", "src/", "-out:gdbuild.x86_64", "-debug"]
+            }
+        },
+    ],
+    "settings":
+    {
+        "auto_complete": true, // when false: press ctrl + space to open suggestions
+        "LSP":
+        {
+            "odin":
+            {
+                "enabled": true,
+            },
+        },
+    },
 }

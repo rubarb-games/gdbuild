@@ -1,3 +1,4 @@
 .idea/OdinSdkConfig.xml
 .idea/libraries/Odin_SDK.xml
-*.exe
+gdbuild.exe
+gdbuild.x86_64
