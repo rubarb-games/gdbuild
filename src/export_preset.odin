@@ -332,24 +332,25 @@ export_preset_hook :: proc(args: ^models.Args, cfg: ^models.Config) {
     register_api(L)
     logger.info(.CONFIG, fmt.tprint("lua api"))
 
-    lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
+    lua.L_dofile(L, strings.clone_to_cstring(args.script))
 
     lua.getglobal(L, "export_preset")
     if !lua.isfunction(L, -1) {
         lua.pop(L, 1)
         lua.close(L)
-        logger.fatal(.CONFIG, fmt.tprintf("No 'export_preset' function found in %s. Will use default export presets", args.script_path))
+        logger.fatal(.CONFIG, fmt.tprintf("No 'export_preset' function found in %s. Will use default export presets", args.script))
+    
+    } else {
+        // Call the function
+        lua.pushlightuserdata(L, rawptr(ep))
+        if lua.pcall(L, 1, 0, 0) != 0 {
+            err_msg := lua.tostring(L, -1)
+            logger.error(.SCRIPT, strings.clone_from_cstring(err_msg))
+            fmt.println("Lua err: ", err_msg)
+            lua.pop(L, 1)
+        }
+        logger.info(.CONFIG, fmt.tprint("called the function"))
     }
-
-    // Call the function
-    lua.pushlightuserdata(L, rawptr(ep))
-    if lua.pcall(L, 1, 0, 0) != 0 {
-        err_msg := lua.tostring(L, -1)
-        logger.error(.SCRIPT, strings.clone_from_cstring(err_msg))
-        fmt.println("Lua err: ", err_msg)
-        lua.pop(L, 1)
-    }
-    logger.info(.CONFIG, fmt.tprint("called the function"))
 
     ep_str: string = serialize(ep)
     defer delete(ep_str)

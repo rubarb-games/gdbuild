@@ -4,7 +4,7 @@ import "core:fmt"
 import "core:flags"
 import "core:os"
 import "core:path/filepath"
-//import strings "core:strings"
+import strings "core:strings"
 import lua "vendor:lua/5.4"
 
 import "logger"
@@ -26,7 +26,7 @@ main :: proc() {
         logger.fatal(.CONFIG, fmt.tprintf("Cannot create file path for ./scripts/main.lua. Abort."))
         os.exit(1)
     }
-    args.script_path = script_path
+    args.script = script_path
 
     err := flags.parse(&args, os.args[1:])
     if err != nil {
@@ -36,26 +36,62 @@ main :: proc() {
         os.exit(1)
     }
 
-    // do some form of validation of args?
-    // - a bit hard to valiate a version number, as different apps use different schemes
-
-    // Use a terminal printing package to prettify the output of the config building
-    fmt.println("Arguments =========================================================")
-    fmt.printfln("  script_path: %s", args.script_path)
-    fmt.printfln("          dry: %v", args.dry)
-    fmt.printfln("      version: %s", args.version)
-    fmt.printfln("      verbose: %v", args.verbose)
-
-    // Let each hook define their own Lua context. Makes it easier to isolate
-    // the hook api, and keep api simple
+    fmt.println("== Arguments =========================================================")
+    table(
+        {"script", args.script},
+        {"dry", fmt.tprint(args.dry)},
+        {"version", args.version},
+        {"verbose", fmt.tprint(args.verbose)},
+    )
 
     // create a config object
     // used for setting project root folder, preprocessor script, if any, etc.
-    cfg: ^models.Config = config_hook(&args)
+    configs := config_hook(&args)
+    defer delete(configs)
 
-    logger.info(.CONFIG, fmt.tprintf("folder_project: %v", cfg.folder_project))
+    logger.info(.CONFIG, fmt.tprintf("Got %v Config objects", len(configs)))
 
-    export_preset_hook(&args, cfg)
+    // export_preset_hook(&args, cfg)
+}
+
+table :: proc(lines: ..[]string) {
+    cols : [dynamic]int
+    defer delete(cols)
+
+    // set each col to 0
+    for line in lines {
+        for cell, i in line {
+            append(&cols, 0)
+        }
+    }
+
+    // find the widest cells
+    for line in lines {
+        for cell, i in line {
+            if len(cell) > cols[i] {
+                cols[i] = len(cell)
+            }
+        }
+    }
+
+    for line in lines {
+        cells : [dynamic]string
+        for cell, i in line {
+            if i == 0 {
+                s := strings.left_justify(cell, cols[i], " ")
+                append(&cells, strings.right_justify(s, len(s) + 2, " "))
+            } else {
+                append(&cells, strings.left_justify(cell, cols[i], " "))
+            }
+        }
+        res, err := strings.join(cells[:], "  ")
+        if err != nil {
+            logger.error(.CONFIG, "Cannot join strings")
+        }
+        defer delete(res)
+        fmt.println(res)
+    }
+}
 
 //    L = lua.L_newstate()
 //    lua.L_openlibs(L) // open standard libs for Lua
@@ -97,7 +133,6 @@ main :: proc() {
     //    project_name: string = strings.clone_from_cstring(lua.tostring(L, -1))
     //    logger.info(.CONFIG, fmt.tprintf("Got name from lua: %s", project_name))
     //}
-}
 
 // put in export_preset package
 //export_get_name :: proc "c" (L: ^lua.State) -> i32 {

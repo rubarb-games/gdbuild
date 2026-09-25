@@ -10,14 +10,14 @@
             "name": "gdbuild",
             "file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
             "windows": {
-                "cmd": ["odin", "build", "${project_path}/src/", "-out:${project_path}/gdbuild.exe", "-debug"]
+                "cmd": ["odin", "build", "${project_path}/src/", "-out:${project_path}/gdbuild.exe", "-debug"],
             },
             "osx": {
-                "cmd": ["odin", "build", "${project_path}/src/"]
+                "cmd": ["odin", "build", "${project_path}/src/"],
             },
             "linux": {
-                "cmd": ["odin", "build", "${project_path}/src/", "-out:${project_path}/gdbuild.x86_64", "-debug"]
-            }
+                "cmd": ["odin", "build", "${project_path}/src/", "-out:${project_path}/gdbuild.x86_64", "-debug"],
+            },
         },
     ],
     "settings":
@@ -29,6 +29,10 @@
             {
                 "enabled": true,
             },
+            "clients":
+            {
+				"enabled": true
+			},
         },
     },
 }
