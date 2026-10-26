@@ -1,39 +1,25 @@
 local c = require("scripts/common")
 
-function create_config(args)
-	c.hello()
+-- ATM, create_config works one single config. A future version could
+-- support writing multiple configs. By giving each one a unique id,
+-- the could be created on the odin side.
+-- set_folder_project(0, "...")
 
-	print("version: " .. get_version(args))
-	print("dry:     " .. tostring(is_dry(args)))
-	print("verbose: " .. tostring(is_verbose(args)))
-
-	-- [REQUIRED] folder_project: string
-	-- [REQUIRED] godot_version: string,
-	-- [REQUIRED] repo_url: string,
-	-- folder_output: string,
-	-- repo_branch: string,
-	-- repo_commit: string,
-	-- preprocessor: string,
-	-- path_log_build: string,
-	-- path_log_preprocessor: string,
-	-- path_log_export: string,
-	-- path_log_deployment: string,
-
-	-- TODO: how to handle buildnum?
-
-	return {
-		{
-			folder_project = "./folder/sub_folder/project",
-			godot_version = "4.7.1-stable",
-			repo_url = "https://github.com/repo",
-			path_log_build = "logs/log_build.log",
-		},
-		{},
-	}
+-- One config per build. Multiple deployments
+-- Should get access to command args
+function create_config()
+	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
+	project_folder(".")
+	godot_version("4.6.1-stable")
+	project_repo_url("git@github.com:rubarb-games/basalt-01.git")
+	godot_preprocessor("build-script/preprocess.gd")
 end
 
 -- will need access to cmd args, config and whatever else
-function export_preset(ep)
-	set_name(ep, "Thomas's Super Game")
-	set_platform(ep, "Quantum computer")
+function create_export_preset()
+	-- name("Thomas's Super Game")
+	-- platform("Quantum computer")
+
+	export_dir("src")
+	-- export_file("file.txt")
 end
