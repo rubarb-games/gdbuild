@@ -12,12 +12,20 @@
 		},
 	],
 	"build_systems": [
-		{
-			"name": "gdbuild",
-			"cmd": "odin build . -out:../gdbuild.exe",
-			"file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
-		}
-	],
+        {
+            "name": "gdbuild",
+            "file_regex": "^(.+)\\(([0-9]+):([0-9]+)\\) (.+)$",
+            "windows": {
+                "cmd": ["odin", "build", "${project_path}/src/", "-out:${project_path}/gdbuild.exe", "-debug"],
+            },
+            "osx": {
+                "cmd": ["odin", "build", "${project_path}/src/"],
+            },
+            "linux": {
+                "cmd": ["odin", "build", "${project_path}/src/", "-out:${project_path}/gdbuild.x86_64", "-debug"],
+            },
+        },
+    ],
 	"settings":
 	{
 		"auto_complete": true, // when false: press ctrl + space to open suggestions

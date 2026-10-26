@@ -4,16 +4,18 @@ import "core:fmt"
 import "core:flags"
 import "core:os"
 import "core:path/filepath"
-//import strings "core:strings"
 import lua "vendor:lua/5.4"
 
-import "logger"
-import "models"
+import l "logger"
+import m "models"
+import ep "export_preset"
+import c "config"
+import u "utils"
 
 L: ^lua.State
 
 main :: proc() {
-    args: models.Args
+    args: m.Args
 
     // Set default before parsing
     // The defaults could be put in a config file, to allow for customizing per project
@@ -23,16 +25,16 @@ main :: proc() {
 
     script_path, join_err := filepath.join({"./scripts/", "main.lua"})
     if join_err != nil {
-        logger.fatal(.CONFIG, fmt.tprintf("Cannot create file path for ./scripts/main.lua. Abort."))
+        l.fatal(.CONFIG, fmt.tprintf("Cannot create file path for ./scripts/main.lua. Abort."))
         os.exit(1)
     }
     args.script_path = script_path
 
     err := flags.parse(&args, os.args[1:])
     if err != nil {
-        logger.fatal(.CONFIG, fmt.tprintf("Error parsing arguments: %v\n", err))
+        l.fatal(.CONFIG, fmt.tprintf("Error parsing arguments: %v\n", err))
         stderr_stream := os.to_stream(os.stderr)
-        flags.write_usage(stderr_stream, models.Args, os.args[0])
+        flags.write_usage(stderr_stream, m.Args, os.args[0])
         os.exit(1)
     }
 
@@ -41,21 +43,40 @@ main :: proc() {
 
     // Use a terminal printing package to prettify the output of the config building
     fmt.println("Arguments =========================================================")
-    fmt.printfln("  script_path: %s", args.script_path)
-    fmt.printfln("          dry: %v", args.dry)
-    fmt.printfln("      version: %s", args.version)
-    fmt.printfln("      verbose: %v", args.verbose)
+    u.table(
+        {"script_path", args.script_path},
+        {"dry", args.dry},
+        {"version", args.version},
+        {"verbose", args.verbose},
+    )
 
     // Let each hook define their own Lua context. Makes it easier to isolate
     // the hook api, and keep api simple
 
     // create a config object
     // used for setting project root folder, preprocessor script, if any, etc.
-    cfg: ^models.Config = config_hook(&args)
+    cfg := m.Config {
+        repo_branch = "main",
+        folder_project = "project",
+    }
 
-    logger.info(.CONFIG, fmt.tprintf("folder_project: %v", cfg.folder_project))
+    c.hook(&cfg, &args)
+    c.print(&cfg)
 
-    export_preset_hook(&args, cfg)
+    // * checkout version repo
+    // * get and verify the version files
+    // * get version from args
+    // * bump build num
+    // > lua.on_version_updated() [optional] - could be used for custom handling of versioning strategy
+    // * print config and version info
+
+    exp_options := m.ExportPresetOptions {}
+    exp_preset := m.ExportPreset {
+        options = &exp_options
+    }
+
+    ep.set_defaults(&exp_preset)
+    ep.hook(&args, &cfg, &exp_preset) // also version
 
 //    L = lua.L_newstate()
 //    lua.L_openlibs(L) // open standard libs for Lua
@@ -122,3 +143,4 @@ main :: proc() {
     
 //    return 0 // Setters don't need to return a value to Lua
 //}
+
