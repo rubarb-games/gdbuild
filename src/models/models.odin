@@ -36,6 +36,21 @@ Version :: struct {
     build_mode: string,
 }
 
+ExportFiles :: struct {
+    name: string,
+    values: [dynamic]string
+}
+
+CustomizedFiles :: struct {
+    name: string,
+    values: map[string]string
+}
+
+ExportResources :: union {
+    ExportFiles,
+    CustomizedFiles,
+}
+
 ExportPresetOptions :: struct {
     custom_template_debug:              string,
     custom_template_release:            string,
@@ -88,7 +103,7 @@ ExportPreset :: struct {
     export_files:          [dynamic]string,
     include_filter:        string,
     exclude_filter:        string,
-    export_path:           string,
+    // export_path:           string,
     patches:               [dynamic]string,
     patch_delta_encoding:  bool,
     patch_delta_compression_level_zstd: int,

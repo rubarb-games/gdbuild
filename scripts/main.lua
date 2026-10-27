@@ -20,6 +20,18 @@ function create_export_preset(args, config, version)
 	name("Thomas's Super Game")
 	platform("Quantum computer")
 
+	export_filter("exclude")
 	export_dir("src")
 	export_file("scripts/common.lua")
+
+	include_filter("*.toml,*.ini")
+
+	script_export_mode("text") -- binary_token, compressed_binary_token
+
+	texture_format_s3tc_bptc(true)
+	texture_format_etc2_astc(false)
+	shader_baker(true)
+
+	application_icon("") -- res:// ?
+	application_file_version(version.full_string)
 end

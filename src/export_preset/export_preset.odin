@@ -3,6 +3,7 @@ package export_preset
 import "core:fmt"
 import "core:os"
 import "core:strings"
+import "core:slice"
 import "core:path/filepath"
 import "base:runtime"
 import lua "vendor:lua/5.4"
@@ -62,10 +63,9 @@ set_defaults :: proc(preset: ^m.ExportPreset) {
     preset.dedicated_server = false
     preset.custom_features = ""
     preset.export_filter = ""
-    preset.export_files = [dynamic]string{}
     preset.include_filter = ""
     preset.exclude_filter = ""
-    preset.export_path = ""
+    // preset.export_path = ""
     preset.patches = [dynamic]string{}
     preset.patch_delta_encoding = false
     preset.patch_delta_compression_level_zstd = 19
@@ -128,7 +128,7 @@ register_api :: proc(L: ^lua.State) {
     lua.register(L, "export_dir", lua_export_dir)
     lua.register(L, "include_filter", lua_set_include_filter)
     lua.register(L, "exclude_filter", lua_set_exclude_filter)
-    lua.register(L, "export_path", lua_set_export_path)
+    // lua.register(L, "export_path", lua_set_export_path)
     // lua.register(L, "patches", lua_set_patches)
     lua.register(L, "patch_delta_encoding", lua_set_patch_delta_encoding)
     lua.register(L, "patch_delta_compression_level_zstd", lua_set_patch_delta_compression_level_zstd)
@@ -310,12 +310,30 @@ lua_set_custom_features :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-// I suppose this is actually an enum. Find the values
 lua_set_export_filter :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        ep.export_filter = s
+    
+    filter, ok_filter := u.get_string(L, 1)
+    if !ok_filter {
+        l.warning(.EXPORT_PRESET, "Cannot get export_filter from lua")
+        return 1
     }
+
+    valid_filters := [5]string{
+        "exclude",
+        "all_resources",
+        "scenes",
+        "resources",
+        "customized",
+    }
+
+    if !slice.contains(valid_filters[:], filter) {
+        l.error(.EXPORT_PRESET, fmt.tprintf("Invalid filter: %s", filter))
+        return 1
+    }
+
+    // when filter is server thing, change the backing field files to that other thing.
+    ep.export_filter = filter
     return 0
 }
 
@@ -335,13 +353,13 @@ lua_set_exclude_filter :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-lua_set_export_path :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        ep.export_path = s
-    }
-    return 0
-}
+// lua_set_export_path :: proc "c" (L: ^lua.State) -> i32 {
+//     context = runtime.default_context()
+//     if s, ok := u.get_string(L, 1); ok {
+//         ep.export_path = s
+//     }
+//     return 0
+// }
 
 lua_set_patch_delta_encoding :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
@@ -425,9 +443,34 @@ lua_set_encrypt_directory :: proc "c" (L: ^lua.State) -> i32 {
 
 lua_set_script_export_mode :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
-    if i, ok := u.get_int(L, 1); ok {
-        ep.script_export_mode = i
+
+    mode, ok_mode := u.get_string(L, 1)
+    if !ok_mode {
+        l.warning(.EXPORT_PRESET, "Cannot get script_export_mode from lua")
+        return 1
     }
+
+    ExportMode :: enum {
+        Text = 0,
+        BinaryToken = 1,
+        CompressedBinaryToken = 2,
+    }
+
+    export_mode: ExportMode
+
+    switch mode {
+        case "text":
+            export_mode = .Text
+        case "binary_token":
+            export_mode = .BinaryToken
+        case "compressed_binary_token":
+            export_mode = .CompressedBinaryToken
+        case:
+            l.error(.EXPORT_PRESET, fmt.tprintf("Invalid script export mode: %s", export_mode))
+            return 1
+    }
+
+    ep.script_export_mode = int(export_mode)
     return 0
 }
 

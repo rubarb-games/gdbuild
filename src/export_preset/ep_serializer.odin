@@ -25,7 +25,9 @@ serialize :: proc(preset: ^m.ExportPreset, sb: ^strings.Builder) {
     write_stringf(sb, "runnable=%v", preset.runnable)
     write_stringf(sb, "dedicated_server=%v", preset.dedicated_server)
     write_stringf(sb, "custom_features=%q", preset.custom_features)
-    write_stringf(sb, "export_path=%q", preset.export_path)
+    
+    // Unnecessary. It is passed to the editor via command line
+    // write_stringf(sb, "export_path=%q", preset.export_path)
 
     // exclude: exclude the ones on export_files
     // all_resources: export all, ignores files in export_files
@@ -33,7 +35,14 @@ serialize :: proc(preset: ^m.ExportPreset, sb: ^strings.Builder) {
     // resources: selected resources and deps
     // customized: as dedicated server
     // - dedicated_server = true
-    // - customized_files={"res://":"strip"} (export_files is not even serialized)
+    // - customized_files=
+    // customized_files={
+    // "res://": "strip",
+    // "res://addons/analytics/": "strip",
+    // "res://addons/analytics/analytics_backend.gd": "keep",
+    // "res://addons/analytics/analytics_editor.gd": "remove"
+    // }
+
     write_stringf(sb, "export_filter=%q", preset.export_filter)  
     write_stringf(sb, "include_filter=%q", preset.include_filter)
     write_stringf(sb, "exclude_filter=%q", preset.exclude_filter)
