@@ -45,6 +45,7 @@ print :: proc(cfg: ^m.Config) {
     u.table("| Config",
         {"version_repo", cfg.version_repo},
         {"folder_project", cfg.folder_project},
+        {"folder_project_abs", cfg.folder_project_abs},
         {"godot_version", cfg.godot_version},
         {"repo_url", cfg.repo_url},
         {"repo_branch", cfg.repo_branch},
@@ -76,6 +77,11 @@ lua_set_folder_project :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     if s, ok := u.get_string(L, 1); ok {
         cfg.folder_project = s
+        folder_project_abs, abs_ok := u.get_absolute_path(cfg.folder_project)
+        if !abs_ok {
+            l.fatal(.CONFIG, fmt.tprintf("Cannot create absolute path for folder_project: %s", cfg.folder_project))
+        }
+        cfg.folder_project_abs = folder_project_abs
     }
     return 0
 }
