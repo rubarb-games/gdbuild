@@ -3,12 +3,14 @@ package main
 import "core:os"
 import "core:fmt"
 import "core:flags"
+import "core:strings"
+import lua "vendor:lua/5.4"
 
 import m "models"
 import l "logger"
 import u "utils"
 
-parse :: proc(args: ^m.Args) {
+parse_args :: proc(args: ^m.Args) {
     err := flags.parse(args, os.args[1:])
     if err != nil {
         l.fatal(.CONFIG, fmt.tprintf("Error parsing arguments: %v\n", err))
@@ -18,7 +20,7 @@ parse :: proc(args: ^m.Args) {
     }
 }
 
-validate :: proc(args: ^m.Args) -> bool {
+validate_args :: proc(args: ^m.Args) -> bool {
     valid := true
     if script_path_abs, ok := u.get_absolute_path(args.script_path); !ok {
         l.fatal(.ARGS, fmt.tprintf("Cannot find main lua script at %s", args.script_path))
@@ -27,11 +29,27 @@ validate :: proc(args: ^m.Args) -> bool {
     return valid
 }
 
-print :: proc(args: ^m.Args) {
+print_args :: proc(args: ^m.Args) {
     u.table("| Arguments",
         {"script_path", args.script_path},
         {"live", args.live},
         {"version", args.version},
         {"verbose", args.verbose},
     )
+}
+
+pass_args_to_lua :: proc(L: ^lua.State, args: ^m.Args) {
+    lua.newtable(L)
+
+    lua.pushstring(L, strings.clone_to_cstring(args.script_path))
+    lua.setfield(L, -2, "script_path")
+
+    lua.pushboolean(L, b32(args.live))
+    lua.setfield(L, -2, "live")
+
+    lua.pushstring(L, strings.clone_to_cstring(args.version))
+    lua.setfield(L, -2, "version")
+
+    lua.pushboolean(L, b32(args.verbose))
+    lua.setfield(L, -2, "verbose")
 }

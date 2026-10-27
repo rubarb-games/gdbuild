@@ -1,47 +1,46 @@
-package config
+package main
 
+import "core:os"
 import "core:fmt"
 import "core:strings"
 import "base:runtime"
 import lua "vendor:lua/5.4"
 
-import l "../logger"
-import m "../models"
-import u "../utils"
+import l "logger"
+import m "models"
+import u "utils"
 
 cfg: ^m.Config
 
-main :: proc() {}
-
-hook :: proc(config: ^m.Config, args: ^m.Args) {
+config_hook :: proc(config: ^m.Config, args: ^m.Args) {
     L: ^lua.State
     L = lua.L_newstate()
+    lua.L_openlibs(L) // add standard libs to lua script
+    
+    register_api(L)
 
     cfg = config
 
-    lua.L_openlibs(L) // add standard libs to lua script
-
-    register_api(L)
-
     lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
 
-    lua.getglobal(L, "create_config")
-    if !lua.isfunction(L, -1) {
-        lua.pop(L, 1)
-        lua.close(L)
-        l.fatal(.CONFIG, fmt.tprintf("No 'create_config' function found in %s. Will use default export presets", args.script_path))
+    if !u.lua_require_function(L, "create_config") {
+        l.fatal(.CONFIG, fmt.tprintf("Cannot find a function called 'create_config' in %s. Abort", args.script_path))
+        os.exit(1)
     }
 
-    // Call the function
-    // 0 arguments, 0 return values
-    if lua.pcall(L, 0, 0, 0) != 0 {
+    // put the Args on the lua stack as a table
+    pass_args_to_lua(L, args)
+
+    // Call the function and pass the args table as argument
+    // 1 arguments, 0 return values
+    if lua.pcall(L, 1, 0, 0) != 0 {
         err_msg := lua.tostring(L, -1)
         l.error(.CONFIG, strings.clone_from_cstring(err_msg))
         fmt.println("Lua err: ", err_msg)
     }
 }
 
-print :: proc(cfg: ^m.Config) {
+print_config :: proc(cfg: ^m.Config) {
     u.table("| Config",
         {"version_repo", cfg.version_repo},
         {"folder_project", cfg.folder_project},

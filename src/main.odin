@@ -4,7 +4,6 @@ import "core:fmt"
 
 import m "models"
 import ep "export_preset"
-import c "config"
 
 main :: proc() {
     fmt.println("== gdbuild ========================================================")
@@ -16,17 +15,17 @@ main :: proc() {
         live = false
     }
 
-    parse(&args)
-    validate(&args)
-    print(&args)
+    parse_args(&args)
+    validate_args(&args)
+    print_args(&args)
 
     cfg := m.Config {
         repo_branch = "main",
         folder_project = "project",
     }
 
-    c.hook(&cfg, &args)
-    c.print(&cfg)
+    config_hook(&cfg, &args)
+    print_config(&cfg)
 
     // * checkout version repo
     // * get and verify the version files

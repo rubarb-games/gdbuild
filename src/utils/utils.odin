@@ -144,3 +144,13 @@ get_float :: proc(L: ^lua.State, arg_pos: int) -> (value: f64, ok: bool) {
     val := lua.tonumber(L, i32(arg_pos))
     return f64(val), true
 }
+
+lua_require_function :: proc(L: ^lua.State, function_name: cstring) -> bool {
+    lua.getglobal(L, function_name)
+    if !lua.isfunction(L, -1) {
+        lua.pop(L, 1)
+        lua.close(L)
+        return false
+    }
+    return true
+}

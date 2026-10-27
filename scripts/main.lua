@@ -6,8 +6,7 @@ local c = require("scripts/common")
 -- set_folder_project(0, "...")
 
 -- One config per build. Multiple deployments
--- Should get access to command args
-function create_config()
+function create_config(args)
 	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
 	project_folder(".")
 	godot_version("4.6.1-stable")
@@ -15,7 +14,6 @@ function create_config()
 	godot_preprocessor("build-script/preprocess.gd")
 end
 
--- will need access to cmd args, config and whatever else
 function create_export_preset()
 	name("Thomas's Super Game")
 	platform("Quantum computer")
