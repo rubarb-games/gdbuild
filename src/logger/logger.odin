@@ -34,8 +34,17 @@ LogEntry :: struct {
 }
 
 entries: [dynamic]LogEntry
+log_level := LogType.INFO 
+
+set_log_level :: proc(level: LogType) {
+    log_level = level
+}
 
 log :: proc(level: LogType, category: LogCategory, message: string) {
+    if level < log_level {
+        return
+    }
+    
     entry := LogEntry{
         timestamp = get_timestamp(),
         level = level,

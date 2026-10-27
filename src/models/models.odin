@@ -28,6 +28,14 @@ Config :: struct {
 	godot_preprocessor: string,
 }
 
+Version :: struct {
+    major: int,
+    minor: int,
+    build_num: int,
+    build_type: string,
+    build_mode: string,
+}
+
 ExportPresetOptions :: struct {
     custom_template_debug:              string,
     custom_template_release:            string,

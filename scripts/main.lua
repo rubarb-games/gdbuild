@@ -12,6 +12,8 @@ function create_config(args)
 	godot_version("4.6.1-stable")
 	project_repo_url("git@github.com:rubarb-games/basalt-01.git")
 	godot_preprocessor("build-script/preprocess.gd")
+
+	-- already here decide where to deploy? or deploy at all?
 end
 
 function create_export_preset()

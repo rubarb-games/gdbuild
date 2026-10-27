@@ -29,11 +29,9 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
 
     lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
 
-    lua.getglobal(L, "create_export_preset")
-    if !lua.isfunction(L, -1) {
-        lua.pop(L, 1)
-        lua.close(L)
-        l.fatal(.CONFIG, fmt.tprintf("No 'create_export_preset' function found in %s. Will use default export presets", args.script_path))
+    if !u.lua_require_function(L, "create_export_preset") {
+        l.fatal(.EXPORT_PRESET, fmt.tprintf("No 'create_export_preset' function found in %s. Cannot export Godot project", args.script_path))
+        os.exit(1)
     }
 
     // Call the function
@@ -45,11 +43,6 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
         // lua.pop(L, 1)
     }
 
-    // ep_str: string = serialize(ep)
-    // defer delete(ep_str)
-
-    // fmt.println(ep_str)
-
     // Default to writing to project folder
     preset_path, join_err := filepath.join({".", "export_presets.cfg"})
     if join_err != nil {
@@ -57,7 +50,6 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
         return
     }
 
-    // Should probably listen for a result, and print if verbose
     write_file(ep, preset_path)
 }
 
