@@ -21,8 +21,6 @@ hook :: proc(config: ^m.Config, args: ^m.Args) {
 
     lua.L_openlibs(L) // add standard libs to lua script
 
-    l.info(.CONFIG, fmt.tprint("Set default Config"))
-
     register_api(L)
 
     lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
@@ -44,7 +42,7 @@ hook :: proc(config: ^m.Config, args: ^m.Args) {
 }
 
 print :: proc(cfg: ^m.Config) {
-    u.table(
+    u.table("| Config",
         {"version_repo", cfg.version_repo},
         {"folder_project", cfg.folder_project},
         {"godot_version", cfg.godot_version},

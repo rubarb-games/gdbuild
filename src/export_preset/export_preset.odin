@@ -219,7 +219,7 @@ lua_export_dir :: proc "c" (L: ^lua.State) -> i32 {
         return 1
     }
     // does dir exist?
-    path, path_ok := u.path_exists(cfg.folder_project, dir)
+    path, path_ok := u.get_absolute_path(cfg.folder_project, dir)
     if !path_ok {
         return 1
     }

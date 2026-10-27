@@ -9,7 +9,7 @@ import "core:path/filepath"
 
 main :: proc() {}
 
-table :: proc(lines: ..[]any) {
+table :: proc(title: string, lines: ..[]any) {
     cols : [dynamic]int
     defer delete(cols)
 
@@ -30,6 +30,8 @@ table :: proc(lines: ..[]any) {
         }
     }
 
+    fmt.println(title)
+    
     for line in lines {
         cells : [dynamic]string
         for cell, i in line {
@@ -41,6 +43,7 @@ table :: proc(lines: ..[]any) {
                 append(&cells, strings.left_justify(cell_str, cols[i], " "))
             }
         }
+
         res, err := strings.join(cells[:], "  ")
         if err != nil {
             fmt.eprintln("Cannot join strings")
@@ -48,6 +51,8 @@ table :: proc(lines: ..[]any) {
         defer delete(res)
         fmt.println(res)
     }
+    
+    fmt.println("")
 }
 
 walk_tree :: proc(abs_path: string, path_buffer: ^[dynamic]string) -> os.Error {
@@ -81,7 +86,7 @@ walk_tree :: proc(abs_path: string, path_buffer: ^[dynamic]string) -> os.Error {
     return os.ERROR_NONE
 }
 
-path_exists :: proc(segments: ..string) -> (value: string, ok: bool) {
+get_absolute_path :: proc(segments: ..string) -> (value: string, ok: bool) {
     joined, join_err := os.join_path(segments[:], context.allocator)
     if join_err != nil {
         l.warning(.CONFIG, fmt.tprintf("Failed to join path for %v. Abort.", segments[:]))
