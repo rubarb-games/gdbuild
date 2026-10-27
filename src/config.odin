@@ -29,7 +29,7 @@ config_hook :: proc(config: ^m.Config, args: ^m.Args) {
     }
 
     // put the Args on the lua stack as a table
-    pass_args_to_lua(L, args)
+    u.lua_pass_args(L, args)
 
     // Call the function and pass the args table as argument
     // 1 arguments, 0 return values

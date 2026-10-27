@@ -16,7 +16,7 @@ function create_config(args)
 	-- already here decide where to deploy? or deploy at all?
 end
 
-function create_export_preset()
+function create_export_preset(args, config, version)
 	name("Thomas's Super Game")
 	platform("Quantum computer")
 

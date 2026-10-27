@@ -52,6 +52,6 @@ main :: proc() {
     }
 
     ep.set_defaults(&exp_preset)
-    ep.hook(&args, &cfg, &exp_preset) // also version
+    ep.hook(&exp_preset, &args, &cfg, &version)
 }
 

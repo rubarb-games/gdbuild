@@ -37,19 +37,3 @@ print_args :: proc(args: ^m.Args) {
         {"verbose", args.verbose},
     )
 }
-
-pass_args_to_lua :: proc(L: ^lua.State, args: ^m.Args) {
-    lua.newtable(L)
-
-    lua.pushstring(L, strings.clone_to_cstring(args.script_path))
-    lua.setfield(L, -2, "script_path")
-
-    lua.pushboolean(L, b32(args.live))
-    lua.setfield(L, -2, "live")
-
-    lua.pushstring(L, strings.clone_to_cstring(args.version))
-    lua.setfield(L, -2, "version")
-
-    lua.pushboolean(L, b32(args.verbose))
-    lua.setfield(L, -2, "verbose")
-}

@@ -2,10 +2,12 @@ package utils
 
 import "core:fmt"
 import "core:os"
-import strings "core:strings"
-import lua "vendor:lua/5.4"
-import l "../logger"
+import "core:strings"
 import "core:path/filepath"
+import lua "vendor:lua/5.4"
+
+import l "../logger"
+import m "../models"
 
 main :: proc() {}
 
@@ -153,4 +155,53 @@ lua_require_function :: proc(L: ^lua.State, function_name: cstring) -> bool {
         return false
     }
     return true
+}
+
+lua_pass_args :: proc(L: ^lua.State, args: ^m.Args) {
+    lua.newtable(L)
+
+    push_string(L, "script_path", args.script_path)
+
+    lua.pushboolean(L, b32(args.live))
+    lua.setfield(L, -2, "live")
+
+    push_string(L, "version", args.version)
+
+    lua.pushboolean(L, b32(args.verbose))
+    lua.setfield(L, -2, "verbose")
+}
+
+lua_pass_config :: proc(L: ^lua.State, cfg: ^m.Config) {
+    lua.newtable(L)
+
+    push_string(L, "version_repo", cfg.version_repo)
+    push_string(L, "folder_project", cfg.folder_project)
+    push_string(L, "folder_project_abs", cfg.folder_project_abs)
+    push_string(L, "godot_version", cfg.godot_version)
+    push_string(L, "repo_url", cfg.repo_url)
+    push_string(L, "repo_branch", cfg.repo_branch)
+    push_string(L, "repo_commit", cfg.repo_commit)
+    push_string(L, "godot_preprocessor", cfg.godot_preprocessor)
+}
+
+lua_pass_version :: proc(L: ^lua.State, v: ^m.Version) {
+    lua.newtable(L)
+
+    push_int(L, "major", v.major)
+    push_int(L, "minor", v.minor)
+    push_int(L, "build_num", v.build_num)
+    push_string(L, "build_type", v.build_type)
+    push_string(L, "build_mode", v.build_mode)
+}
+
+@(private = "file")
+push_string :: proc(L: ^lua.State, field_name: cstring, field_value: string) {
+    lua.pushstring(L, strings.clone_to_cstring(field_value))
+    lua.setfield(L, -2, field_name)
+}
+
+@(private = "file")
+push_int :: proc(L: ^lua.State, field_name: cstring, field_value: int) {
+    lua.pushinteger(L, lua.Integer(field_value))
+    lua.setfield(L, -2, field_name)
 }

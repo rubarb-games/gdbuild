@@ -17,7 +17,7 @@ cfg: ^m.Config
 // for lua to add custom settings for addons, a more generic function for setting key value pairs
 // should be accessible. set_bool("imgui/debug", false), set_string, set_int, set_array ..
 
-hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
+hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version: ^m.Version) {
     L: ^lua.State
     L = lua.L_newstate()
     lua.L_openlibs(L) // add standard libs to lua script
@@ -34,13 +34,15 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
         os.exit(1)
     }
 
+    u.lua_pass_args(L, args)
+    u.lua_pass_config(L, config)
+    u.lua_pass_version(L, version)
+
     // Call the function
-    // lua.pushlightuserdata(L, rawptr(ep))
-    if lua.pcall(L, 0, 0, 0) != 0 {
+    if lua.pcall(L, 3, 0, 0) != 0 {
         err_msg := lua.tostring(L, -1)
         l.error(.EXPORT_PRESET, strings.clone_from_cstring(err_msg))
         fmt.println("Lua err: ", err_msg)
-        // lua.pop(L, 1)
     }
 
     // Default to writing to project folder
