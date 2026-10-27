@@ -17,9 +17,9 @@ end
 
 -- will need access to cmd args, config and whatever else
 function create_export_preset()
-	-- name("Thomas's Super Game")
-	-- platform("Quantum computer")
+	name("Thomas's Super Game")
+	platform("Quantum computer")
 
 	export_dir("src")
-	-- export_file("file.txt")
+	export_file("scripts/common.lua")
 end

@@ -1,6 +1,7 @@
 package export_preset
 
 import "core:fmt"
+import "core:os"
 import "core:strings"
 import "core:path/filepath"
 import "base:runtime"
@@ -44,9 +45,12 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
         // lua.pop(L, 1)
     }
 
-    ep_str: string = serialize(ep)
-    defer delete(ep_str)
+    // ep_str: string = serialize(ep)
+    // defer delete(ep_str)
 
+    // fmt.println(ep_str)
+
+    // Default to writing to project folder
     preset_path, join_err := filepath.join({".", "export_presets.cfg"})
     if join_err != nil {
         l.error(.CONFIG, fmt.tprintf("Cannot create file path for ./export_presets.cfg. Export presets will not be updated."))
@@ -54,13 +58,13 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
     }
 
     // Should probably listen for a result, and print if verbose
-    write_file(ep_str, preset_path)
+    write_file(ep, preset_path)
 }
 
 set_defaults :: proc(preset: ^m.ExportPreset) {
     preset.name = ""
     preset.platform = ""
-    preset.runnable = false
+    preset.runnable = true
     preset.dedicated_server = false
     preset.custom_features = ""
     preset.export_filter = ""
@@ -206,36 +210,58 @@ register_api :: proc(L: ^lua.State) {
 
 lua_export_file :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        append(&ep.export_files, s)
+    file_path_rel, ok_lua := u.get_string(L, 1)
+    if !ok_lua {
+        return 1
     }
+    res_path := fmt.tprintf("res://%s", file_path_rel)
+    append(&ep.export_files, res_path)
     return 0
 }
 
 lua_export_dir :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
-    dir, ok := u.get_string(L, 1)
-    if !ok {
-        return 1
-    }
-    // does dir exist?
-    path, path_ok := u.get_absolute_path(cfg.folder_project, dir)
-    if !path_ok {
+    
+    dir, dir_ok := u.get_string(L, 1)
+    if !dir_ok {
         return 1
     }
     
+    walk_path, walk_ok := u.get_absolute_path(cfg.folder_project_abs, dir)
+    defer delete(walk_path)
+    if !walk_ok {
+        return 1
+    }
+
+    // collect all files and sub directories. Should be an ok
+    // default behaviour. Doesn't make sense to add only a folder
+    // without the contents(?)
     paths := make([dynamic]string)
-    // get all files and sub dirs beneath
-    if u.walk_tree(path, &paths) != nil {
+    if u.walk_tree(walk_path, &paths) != nil {
         l.warning(.EXPORT_PRESET, "Could not traverse tree")
     }
-    for path in paths {
-        // get path relative to project root
-        fmt.println(path)
+    
+    for file_path in paths {
+        if os.is_directory(file_path) {
+            continue
+        }
+        res_path, ok := create_res_path(cfg.folder_project_abs, file_path)
+        if !ok {
+            continue
+        }
+        append(&ep.export_files, res_path)
     }
-    // append to ep.export_files
     
     return 0
+}
+
+create_res_path :: proc(base_path: string, target_path: string) -> (res_path: string, ok: bool) {
+    rel_path, err := filepath.rel(base_path, target_path)
+    if err != .None {
+        l.warning(.EXPORT_PRESET, fmt.tprintf("Could not get relative path for %s > %s", base_path, target_path))
+        return "", false
+    }
+    return fmt.tprintf("res://%s", rel_path), true
 }
 
 // lua_set_patches :: proc "c" (L: ^lua.State) -> i32 {
