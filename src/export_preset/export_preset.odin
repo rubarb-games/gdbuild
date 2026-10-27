@@ -39,7 +39,7 @@ hook :: proc(args: ^m.Args, config: ^m.Config, preset: ^m.ExportPreset) {
     // lua.pushlightuserdata(L, rawptr(ep))
     if lua.pcall(L, 0, 0, 0) != 0 {
         err_msg := lua.tostring(L, -1)
-        l.error(.SCRIPT, strings.clone_from_cstring(err_msg))
+        l.error(.EXPORT_PRESET, strings.clone_from_cstring(err_msg))
         fmt.println("Lua err: ", err_msg)
         // lua.pop(L, 1)
     }
@@ -227,7 +227,7 @@ lua_export_dir :: proc "c" (L: ^lua.State) -> i32 {
     paths := make([dynamic]string)
     // get all files and sub dirs beneath
     if u.walk_tree(path, &paths) != nil {
-        l.warning(.ENGINE, "Could not traverse tree")
+        l.warning(.EXPORT_PRESET, "Could not traverse tree")
     }
     for path in paths {
         // get path relative to project root

@@ -17,6 +17,7 @@ main :: proc() {
     }
 
     parse(&args)
+    validate(&args)
     print(&args)
 
     cfg := m.Config {

@@ -1,7 +1,6 @@
 package main
 
 import "core:os"
-import "core:path/filepath"
 import "core:fmt"
 import "core:flags"
 
@@ -17,6 +16,15 @@ parse :: proc(args: ^m.Args) {
         flags.write_usage(stderr_stream, m.Args, os.args[0])
         os.exit(1)
     }
+}
+
+validate :: proc(args: ^m.Args) -> bool {
+    valid := true
+    if script_path_abs, ok := u.get_absolute_path(args.script_path); !ok {
+        l.fatal(.ARGS, fmt.tprintf("Cannot find main lua script at %s", args.script_path))
+        valid = false
+    }
+    return valid
 }
 
 print :: proc(args: ^m.Args) {

@@ -36,7 +36,7 @@ hook :: proc(config: ^m.Config, args: ^m.Args) {
     // 0 arguments, 0 return values
     if lua.pcall(L, 0, 0, 0) != 0 {
         err_msg := lua.tostring(L, -1)
-        l.error(.SCRIPT, strings.clone_from_cstring(err_msg))
+        l.error(.CONFIG, strings.clone_from_cstring(err_msg))
         fmt.println("Lua err: ", err_msg)
     }
 }
