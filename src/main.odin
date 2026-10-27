@@ -36,7 +36,7 @@ main :: proc() {
     // * get and verify the version files
     // * get version from args
     // * bump build num
-    // > lua.on_version_updated() [optional] - could be used for custom handling of versioning strategy
+    // > lua.after_version_updated() [optional] - could be used for custom handling of versioning strategy
     // * print config and version info
 
     version: m.Version
@@ -45,6 +45,25 @@ main :: proc() {
         parse_version_string(&version, args.version)
     }
     print_version(&version)
+
+    // * make directories
+    // * download editor
+    // * download eport templates
+    // * checkout main repo
+    // > lua.after_repo_checkout() [optional]
+    // * preprocess
+    // * reimport assets
+    // > lua.create_export_preset
+    // * export project
+    // > lua.after_project_export() [optional]
+    // * update version repo
+    // * archive build
+    // for each deployment target
+    // * init target
+    // * deploy
+
+    // maybe a deployment target could be a lua script? makes it easy to add new ones
+    // archiving needs some config. directory, naming convention, zip or not, upload?
 
     exp_options := m.ExportPresetOptions {}
     exp_preset := m.ExportPreset {

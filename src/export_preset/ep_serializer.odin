@@ -29,7 +29,7 @@ serialize :: proc(preset: ^m.ExportPreset, sb: ^strings.Builder) {
 
     // exclude: exclude the ones on export_files
     // all_resources: export all, ignores files in export_files
-    // scens: certain scenes and all dependencies
+    // scenes: certain scenes and all dependencies
     // resources: selected resources and deps
     // customized: as dedicated server
     // - dedicated_server = true
