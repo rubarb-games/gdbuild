@@ -46,6 +46,9 @@ main :: proc() {
     }
     print_version(&version)
 
+    // > lua.project_settings() [optional]
+    //   - read project settings
+    //   - expose functions for overriding and removing settings
     // * make directories
     // * download editor
     // * download eport templates
