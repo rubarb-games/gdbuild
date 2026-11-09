@@ -26,6 +26,7 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
     ep = preset
     cfg = config
 
+    set_defaults(preset)
     register_api(L)
 
     lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
@@ -56,15 +57,16 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
     write_file(ep, preset_path)
 }
 
+@(private = "file")
 set_defaults :: proc(preset: ^m.ExportPreset) {
     preset.name = ""
     preset.platform = ""
     preset.runnable = true
     preset.dedicated_server = false
     preset.custom_features = ""
-    preset.export_filter = ""
-    preset.include_filter = ""
-    preset.exclude_filter = ""
+
+    files_set_default(preset)
+
     // preset.export_path = ""
     preset.patches = [dynamic]string{}
     preset.patch_delta_encoding = false
@@ -123,11 +125,9 @@ register_api :: proc(L: ^lua.State) {
     lua.register(L, "runnable", lua_set_runnable)
     lua.register(L, "dedicated_server", lua_set_dedicated_server)
     lua.register(L, "custom_features", lua_set_custom_features)
-    lua.register(L, "export_filter", lua_set_export_filter)
-    lua.register(L, "export_file", lua_export_file)
-    lua.register(L, "export_dir", lua_export_dir)
-    lua.register(L, "include_filter", lua_set_include_filter)
-    lua.register(L, "exclude_filter", lua_set_exclude_filter)
+
+    files_api(L)
+
     // lua.register(L, "export_path", lua_set_export_path)
     // lua.register(L, "patches", lua_set_patches)
     lua.register(L, "patch_delta_encoding", lua_set_patch_delta_encoding)
@@ -190,65 +190,6 @@ register_api :: proc(L: ^lua.State) {
 //     return 0
 // }
 
-
-
-// lua_set_export_files :: proc "c" (L: ^lua.State) -> i32 {
-//     context = runtime.default_context()
-//     ep := (^m.ExportPreset)(lua.touserdata(L, 1))
-//     new_value := (^[]string)(lua.touserdata(L, 2))
-//     if ep != nil && new_value != nil {
-//         ep.export_files = new_value^
-//     }
-//     return 0
-// }
-
-lua_export_file :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    file_path_rel, ok_lua := u.get_string(L, 1)
-    if !ok_lua {
-        return 1
-    }
-    res_path := fmt.tprintf("res://%s", file_path_rel)
-    append(&ep.export_files, res_path)
-    return 0
-}
-
-lua_export_dir :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    
-    dir, dir_ok := u.get_string(L, 1)
-    if !dir_ok {
-        return 1
-    }
-    
-    walk_path, walk_ok := u.get_absolute_path(cfg.folder_project_abs, dir)
-    defer delete(walk_path)
-    if !walk_ok {
-        return 1
-    }
-
-    // collect all files and sub directories. Should be an ok
-    // default behaviour. Doesn't make sense to add only a folder
-    // without the contents(?)
-    paths := make([dynamic]string)
-    if u.walk_tree(walk_path, &paths) != nil {
-        l.warning(.EXPORT_PRESET, "Could not traverse tree")
-    }
-    
-    for file_path in paths {
-        if os.is_directory(file_path) {
-            continue
-        }
-        res_path, ok := create_res_path(cfg.folder_project_abs, file_path)
-        if !ok {
-            continue
-        }
-        append(&ep.export_files, res_path)
-    }
-    
-    return 0
-}
-
 create_res_path :: proc(base_path: string, target_path: string) -> (res_path: string, ok: bool) {
     rel_path, err := filepath.rel(base_path, target_path)
     if err != .None {
@@ -267,8 +208,6 @@ create_res_path :: proc(base_path: string, target_path: string) -> (res_path: st
 //     }
 //     return 0
 // }
-
-
 
 lua_set_name :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
@@ -310,32 +249,7 @@ lua_set_custom_features :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-lua_set_export_filter :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    
-    filter, ok_filter := u.get_string(L, 1)
-    if !ok_filter {
-        l.warning(.EXPORT_PRESET, "Cannot get export_filter from lua")
-        return 1
-    }
 
-    valid_filters := [5]string{
-        "exclude",
-        "all_resources",
-        "scenes",
-        "resources",
-        "customized",
-    }
-
-    if !slice.contains(valid_filters[:], filter) {
-        l.error(.EXPORT_PRESET, fmt.tprintf("Invalid filter: %s", filter))
-        return 1
-    }
-
-    // when filter is server thing, change the backing field files to that other thing.
-    ep.export_filter = filter
-    return 0
-}
 
 lua_set_include_filter :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()

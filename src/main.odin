@@ -73,7 +73,7 @@ main :: proc() {
         options = &exp_options
     }
 
-    ep.set_defaults(&exp_preset)
+    // ep.set_defaults(&exp_preset)
     ep.hook(&exp_preset, &args, &cfg, &version)
 }
 
