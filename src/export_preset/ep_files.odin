@@ -97,6 +97,9 @@ lua_export_all :: proc "c" (L: ^lua.State) -> i32 {
         return 1
     }
 
+    ep.export_filter = FILTER_ALL_RESOURCES
+    clear(&ep.export_files)
+
     return 0
 }
 

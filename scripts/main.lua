@@ -39,11 +39,10 @@ function create_export_preset(args, config, version)
 	name("Thomas's Super Game")
 	platform("Quantum computer")
 
-	-- too verbose and hard to understand
-	-- export_filter("exclude")
-	-- export_dir("src")
-	-- export_file("scripts/common.lua")
-	-- what I want:
+	-- export everything
+	export_all()
+
+	-- exclude certain directories and all their files and sub-folders
 	exclude_dirs({
 		"dev-tools",
 		"temp",
