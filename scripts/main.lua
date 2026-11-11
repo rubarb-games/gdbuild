@@ -7,6 +7,22 @@ local c = require("scripts/common")
 
 -- One config per build. Multiple deployments
 function create_config(args)
+	--[[
+	to support creating multiple configs:
+	id = create_build()
+	version_repo(id, "git@...")
+	
+	a build could be a struct that holds everything related to a build,
+	also temporary vars
+
+	create_export_preset() would be called once per config, and get the build id passed
+	as first argument
+
+	if any of the config functions are called without a build id, a
+	build will be automatically created. Functions called after
+	will use that build
+	]]--
+
 	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
 	project_folder(".")
 	godot_version("4.6.1-stable")
@@ -14,6 +30,9 @@ function create_config(args)
 	godot_preprocessor("build-script/preprocess.gd")
 
 	-- already here decide where to deploy? or deploy at all?
+end
+
+function project_settings()
 end
 
 function create_export_preset(args, config, version)
