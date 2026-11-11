@@ -39,9 +39,18 @@ function create_export_preset(args, config, version)
 	name("Thomas's Super Game")
 	platform("Quantum computer")
 
-	export_filter("exclude")
-	export_dir("src")
-	export_file("scripts/common.lua")
+	-- too verbose and hard to understand
+	-- export_filter("exclude")
+	-- export_dir("src")
+	-- export_file("scripts/common.lua")
+	-- what I want:
+	exclude_dirs({
+		"dev-tools",
+		"temp",
+		"build-scripts",
+	})
+	-- calling any include functions aftwards is illegal
+	-- include_dirs(...) works only if export_filter is not set
 
 	include_filter("*.toml,*.ini")
 
