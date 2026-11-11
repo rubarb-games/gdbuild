@@ -103,8 +103,83 @@ lua_export_all :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-lua_export_resources :: proc "c" (L: ^lua.State) -> i32 {
+
+lua_exclude_dirs :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
+
+    // This will allow the function to only run once
+    can_set := ep.export_filter == "" || len(ep.export_files) == 0
+    if !can_set {
+        l.warning(.EXPORT_PRESET, fmt.tprintf("Cannot set 'export_filter' to '%s'. It is currently '%s'.", FILTER_EXCLUDE, ep.export_filter))
+        return 1
+    }
+
+    // expect a list of directories passed as arg
+    // go through list and get all files and folders
+
+    // 1. Check if the first argument on the stack is a table
+    if !lua.istable(L, 1) {
+        lua.pushstring(L, "Expected a table (array) as argument")
+        lua.error(L)
+        return 0
+    }
+
+    // 2. Get the length of the array part of the table
+    length := int(lua.rawlen(L, 1))
+    
+    // 3. Allocate an Odin slice or dynamic array to hold the values
+    // Using a temporary allocator or standard allocation
+    // resize(&ep.export_files, length)
+    dirs := make([]string, length)
+    defer {
+        for s in dirs {
+            delete(s)
+        }
+        delete(dirs)
+    }
+
+    // 4. Iterate 1-based (Lua convention) and pull items from the table
+    for i in 1..=length {
+        lua.rawgeti(L, 1, lua.Integer(i)) // Pushes t[i] onto stack
+
+        // Verify the element is actually a string (or convertible to one)
+        if !lua.isstring(L, -1) {
+            lua.pop(L, 1)
+            lua.pushstring(L, "All elements in the array must be strings")
+            lua.error(L)
+            return 0
+        }
+
+        c_str := lua.tostring(L, -1)
+        // Clone the cstring into an Odin-managed string before popping
+        dirs[i - 1] = strings.clone_from_cstring(c_str)
+        lua.pop(L, 1) // Pop t[i] from the stack
+    }
+
+    fmt.printfln("Received array in Odin: %v", dirs)
+
+    // for each string in dirs
+    // walk the tree, collect files and folders in export_files
+
+    ep.export_filter = FILTER_EXCLUDE
+
+    return 0
+}
+
+lua_exclude_files :: proc "c" (L: ^lua.State) -> i32 {
+    context = runtime.default_context()
+
+    // This will allow the function to be called multiple
+    // times as long as the filter doesn't change
+    can_set := ep.export_filter == "" || ep.export_filter == FILTER_EXCLUDE
+    if !can_set {
+        l.warning(.EXPORT_PRESET, fmt.tprintf("Cannot set 'export_filter' to '%s'. It is currently '%s'.", FILTER_EXCLUDE, ep.export_filter))
+        return 1
+    }
+
+    // get files from args
+    // append to ep.export_files
+
     return 0
 }
 
@@ -118,17 +193,14 @@ lua_export_scenes :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-lua_exclude_dirs :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    return 0
-}
-
-lua_exclude_files :: proc "c" (L: ^lua.State) -> i32 {
+lua_export_resources :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     return 0
 }
 
 
+
+// old?
 lua_set_export_filter :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     

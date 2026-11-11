@@ -40,7 +40,7 @@ function create_export_preset(args, config, version)
 	platform("Quantum computer")
 
 	-- export everything
-	export_all()
+	-- export_all()
 
 	-- exclude certain directories and all their files and sub-folders
 	exclude_dirs({
@@ -51,14 +51,14 @@ function create_export_preset(args, config, version)
 	-- calling any include functions aftwards is illegal
 	-- include_dirs(...) works only if export_filter is not set
 
-	include_filter("*.toml,*.ini")
+	-- include_filter("*.toml,*.ini")
 
-	script_export_mode("text") -- binary_token, compressed_binary_token
+	-- script_export_mode("text") -- binary_token, compressed_binary_token
 
-	texture_format_s3tc_bptc(true)
-	texture_format_etc2_astc(false)
-	shader_baker(true)
+	-- texture_format_s3tc_bptc(true)
+	-- texture_format_etc2_astc(false)
+	-- shader_baker(true)
 
-	application_icon("") -- res:// ?
-	application_file_version(version.full_string)
+	-- application_icon("") -- res:// ?
+	-- application_file_version(version.full_string)
 end
