@@ -65,7 +65,6 @@ set_defaults :: proc(preset: ^m.ExportPreset) {
     // preset.name = ""
     // preset.platform = ""
     // preset.runnable = true
-    // preset.dedicated_server = false
     // preset.custom_features = ""
 
     files_set_default(preset)
@@ -127,8 +126,7 @@ set_defaults :: proc(preset: ^m.ExportPreset) {
 register_api :: proc(L: ^lua.State) {
     lua.register(L, "name", lua_set_name)
     lua.register(L, "platform", lua_set_platform)
-    lua.register(L, "runnable", lua_set_runnable)
-    lua.register(L, "dedicated_server", lua_set_dedicated_server)
+    // lua.register(L, "runnable", lua_set_runnable)
     lua.register(L, "custom_features", lua_set_custom_features)
 
     files_api(L)
@@ -289,18 +287,11 @@ lua_set_platform :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
+// unnecessary. always true
 lua_set_runnable :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     if b, ok := u.get_bool(L, 1); ok {
         ep.runnable = b
-    }
-    return 0
-}
-
-lua_set_dedicated_server :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if b, ok := u.get_bool(L, 1); ok {
-        ep.dedicated_server = b
     }
     return 0
 }

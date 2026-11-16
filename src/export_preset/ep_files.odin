@@ -24,6 +24,8 @@ files_set_default :: proc(preset: ^m.ExportPreset) {
     if preset.export_files == nil || len(preset.export_files) == 0 {
         preset.export_files = [dynamic]string{}
     }
+
+    // preset.dedicated_server = false
 }
 
 files_api :: proc(L: ^lua.State) {
@@ -35,6 +37,15 @@ files_api :: proc(L: ^lua.State) {
     // wildcards for file types to either include or exclude
     lua.register(L, "include_filter", lua_set_include_filter)
     lua.register(L, "exclude_filter", lua_set_exclude_filter)
+
+    lua.register(L, "dedicated_server", lua_set_dedicated_server)
+
+    // dedicated_server(bool)
+    // - sets export_filter to CUSTOMIZED
+    // - sets dedicated_server to true
+    // - clear export_files
+    // - or replace with customized_files. Which is a dictionary of
+    // resource path : value (strip, keep, remove) // what's the difference between strip and remove?
 }
 
 lua_export_all :: proc "c" (L: ^lua.State) -> i32 {
@@ -266,5 +277,14 @@ lua_set_exclude_filter :: proc "c" (L: ^lua.State) -> i32 {
 
     ep.exclude_filter = filter_str
     
+    return 0
+}
+
+
+lua_set_dedicated_server :: proc "c" (L: ^lua.State) -> i32 {
+    context = runtime.default_context()
+    if b, ok := u.get_bool(L, 1); ok {
+        ep.dedicated_server = b
+    }
     return 0
 }
