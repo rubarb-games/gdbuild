@@ -26,7 +26,6 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
     ep = preset
     cfg = config
 
-    set_defaults(preset)
     register_api(L)
 
     lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
@@ -47,6 +46,10 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
         fmt.println("Lua err: ", err_msg)
     }
 
+    // Some settings needs to be set. Set them to default
+    // values unless they have already been set by the lua script.
+    set_defaults(preset)
+
     // Default to writing to project folder
     preset_path, join_err := filepath.join({".", "export_presets.cfg"})
     if join_err != nil {
@@ -59,63 +62,65 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
 
 @(private = "file")
 set_defaults :: proc(preset: ^m.ExportPreset) {
-    preset.name = ""
-    preset.platform = ""
-    preset.runnable = true
-    preset.dedicated_server = false
-    preset.custom_features = ""
+    // preset.name = ""
+    // preset.platform = ""
+    // preset.runnable = true
+    // preset.dedicated_server = false
+    // preset.custom_features = ""
 
     files_set_default(preset)
 
+    // Unused, afaik. Will be handled by the godot export cli command
     // preset.export_path = ""
-    preset.patches = [dynamic]string{}
-    preset.patch_delta_encoding = false
-    preset.patch_delta_compression_level_zstd = 19
-    preset.patch_delta_min_reduction = 0.1
-    preset.patch_delta_include_filters = "*"
-    preset.patch_delta_exclude_filters = ""
-    preset.encryption_include_filters = ""
-    preset.encryption_exclude_filters = ""
-    preset.seed = 0
-    preset.encrypt_pck = false
-    preset.encrypt_directory = false
-    preset.script_export_mode = 2
 
-    preset.options.custom_template_debug = ""
-    preset.options.custom_template_release = ""
-    preset.options.debug_export_console_wrapper = 0
-    preset.options.binary_format_embed_pck = false
-    preset.options.texture_format_s3tc_bptc = true
-    preset.options.texture_format_etc2_astc = false
-    preset.options.shader_baker_enabled = true
-    preset.options.binary_format_architecture = "x86_64"
-    preset.options.codesign_enable = false
-    preset.options.codesign_timestamp = true
-    preset.options.codesign_timestamp_server_url = ""
-    preset.options.codesign_digest_algorithm = 1
-    preset.options.codesign_description = ""
-    preset.options.codesign_custom_options = [dynamic]string{}
-    preset.options.application_modify_resources = true
-    preset.options.application_icon = ""
-    preset.options.application_console_wrapper_icon = ""
-    preset.options.application_icon_interpolation = 4
-    preset.options.application_file_version = ""
-    preset.options.application_product_version = ""
-    preset.options.application_company_name = ""
-    preset.options.application_product_name = ""
-    preset.options.application_file_description = ""
-    preset.options.application_copyright = ""
-    preset.options.application_trademarks = ""
-    preset.options.application_export_angle = 0
-    preset.options.application_export_d3d12 = 0
-    preset.options.application_d3d12_agility_sdk_multiarch = true
-    preset.options.ssh_remote_deploy_enabled = false
-    preset.options.ssh_remote_deploy_host = "user@host_ip"
-    preset.options.ssh_remote_deploy_port = "22"
-    preset.options.ssh_remote_deploy_extra_args_ssh = ""
-    preset.options.ssh_remote_deploy_extra_args_scp = ""
-    preset.options.ssh_remote_deploy_run_script = "Expand-Archive -LiteralPath '{temp_dir}\\{archive_name}' -DestinationPath '{temp_dir}'\n$action = New-ScheduledTaskAction -Execute '{temp_dir}\\{exe_name}' -Argument '{cmd_args}'\n$trigger = New-ScheduledTaskTrigger -Once -At 00:00\n$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries\n$task = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings\nRegister-ScheduledTask godot_remote_debug -InputObject $task -Force:$true\nStart-ScheduledTask -TaskName godot_remote_debug\nwhile (Get-ScheduledTask -TaskName godot_remote_debug | ? State -eq running) { Start-Sleep -Milliseconds 100 }"
-    preset.options.ssh_remote_deploy_cleanup_script = "Stop-ScheduledTask -TaskName godot_remote_debug -ErrorAction:SilentlyContinue\nUnregister-ScheduledTask -TaskName godot_remote_debug -Confirm:$false -ErrorAction:SilentlyContinue\nRemove-Item -Recurse -Force '{temp_dir}'"
+    // preset.patches = [dynamic]string{}
+    // preset.patch_delta_encoding = false
+    // preset.patch_delta_compression_level_zstd = 19
+    // preset.patch_delta_min_reduction = 0.1
+    // preset.patch_delta_include_filters = "*"
+    // preset.patch_delta_exclude_filters = ""
+    // preset.encryption_include_filters = ""
+    // preset.encryption_exclude_filters = ""
+    // preset.seed = 0
+    // preset.encrypt_pck = false
+    // preset.encrypt_directory = false
+    // preset.script_export_mode = 2
+
+    // preset.options.custom_template_debug = ""
+    // preset.options.custom_template_release = ""
+    // preset.options.debug_export_console_wrapper = 0
+    // preset.options.binary_format_embed_pck = false
+    // preset.options.texture_format_s3tc_bptc = true
+    // preset.options.texture_format_etc2_astc = false
+    // preset.options.shader_baker_enabled = true
+    // preset.options.binary_format_architecture = "x86_64"
+    // preset.options.codesign_enable = false
+    // preset.options.codesign_timestamp = true
+    // preset.options.codesign_timestamp_server_url = ""
+    // preset.options.codesign_digest_algorithm = 1
+    // preset.options.codesign_description = ""
+    // preset.options.codesign_custom_options = [dynamic]string{}
+    // preset.options.application_modify_resources = true
+    // preset.options.application_icon = ""
+    // preset.options.application_console_wrapper_icon = ""
+    // preset.options.application_icon_interpolation = 4
+    // preset.options.application_file_version = ""
+    // preset.options.application_product_version = ""
+    // preset.options.application_company_name = ""
+    // preset.options.application_product_name = ""
+    // preset.options.application_file_description = ""
+    // preset.options.application_copyright = ""
+    // preset.options.application_trademarks = ""
+    // preset.options.application_export_angle = 0
+    // preset.options.application_export_d3d12 = 0
+    // preset.options.application_d3d12_agility_sdk_multiarch = true
+    // preset.options.ssh_remote_deploy_enabled = false
+    // preset.options.ssh_remote_deploy_host = "user@host_ip"
+    // preset.options.ssh_remote_deploy_port = "22"
+    // preset.options.ssh_remote_deploy_extra_args_ssh = ""
+    // preset.options.ssh_remote_deploy_extra_args_scp = ""
+    // preset.options.ssh_remote_deploy_run_script = "Expand-Archive -LiteralPath '{temp_dir}\\{archive_name}' -DestinationPath '{temp_dir}'\n$action = New-ScheduledTaskAction -Execute '{temp_dir}\\{exe_name}' -Argument '{cmd_args}'\n$trigger = New-ScheduledTaskTrigger -Once -At 00:00\n$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries\n$task = New-ScheduledTask -Action $action -Trigger $trigger -Settings $settings\nRegister-ScheduledTask godot_remote_debug -InputObject $task -Force:$true\nStart-ScheduledTask -TaskName godot_remote_debug\nwhile (Get-ScheduledTask -TaskName godot_remote_debug | ? State -eq running) { Start-Sleep -Milliseconds 100 }"
+    // preset.options.ssh_remote_deploy_cleanup_script = "Stop-ScheduledTask -TaskName godot_remote_debug -ErrorAction:SilentlyContinue\nUnregister-ScheduledTask -TaskName godot_remote_debug -Confirm:$false -ErrorAction:SilentlyContinue\nRemove-Item -Recurse -Force '{temp_dir}'"
 }
 
 @(private = "file")
@@ -128,7 +133,6 @@ register_api :: proc(L: ^lua.State) {
 
     files_api(L)
 
-    // lua.register(L, "export_path", lua_set_export_path)
     // lua.register(L, "patches", lua_set_patches)
     lua.register(L, "patch_delta_encoding", lua_set_patch_delta_encoding)
     lua.register(L, "patch_delta_compression_level_zstd", lua_set_patch_delta_compression_level_zstd)
@@ -178,6 +182,75 @@ register_api :: proc(L: ^lua.State) {
     lua.register(L, "ssh_remote_deploy_cleanup_script", lua_set_ssh_remote_deploy_cleanup_script)
 }
 
+// Utils functions
+
+create_res_path :: proc(base_path: string, target_path: string) -> (res_path: string, ok: bool) {
+    rel_path, err := filepath.rel(base_path, target_path)
+    if err != .None {
+        l.warning(.EXPORT_PRESET, fmt.tprintf("Could not get relative path for %s > %s", base_path, target_path))
+        return "", false
+    }
+    return fmt.tprintf("res://%s", rel_path), true
+}
+
+walk_tree :: proc(dir_abs: string, output: ^[dynamic]string) -> int {
+    paths := make([dynamic]string)
+    defer {
+        for s in paths {
+            delete(s)
+        }
+        delete(paths)
+    }
+
+    if u.walk_tree(dir_abs, &paths) != nil {
+        l.warning(.EXPORT_PRESET, fmt.tprintf("Could not traverse tree from '%s'", dir_abs))
+        return 1
+    }
+
+    for file_path in paths {
+        if os.is_directory(file_path) {
+            continue
+        }
+        res_path, ok := create_res_path(cfg.folder_project_abs, file_path)
+        if !ok {
+            continue
+        }
+        append(&ep.export_files, res_path)
+    }
+
+    return 0
+}
+
+get_array_from_args :: proc(L: ^lua.State, arr: ^[dynamic]string) -> bool {
+    // Check that the first argument on the stack is a lua table.
+    // Seems like there is no difference between a table and array in lua.
+    if !lua.istable(L, 1) {
+        lua.pushstring(L, "Expected a table (array) as argument")
+        lua.error(L)
+        return false
+    }
+
+    length := int(lua.rawlen(L, 1))
+
+    // Pull values from the lua array. Lua indices starts at 1 (wtf?)
+    for i in 1..=length {
+        lua.rawgeti(L, 1, lua.Integer(i)) // Pushes value onto stack
+
+        // Verify the element is actually a string (or convertible to one)
+        if !lua.isstring(L, -1) {
+            lua.pop(L, 1)
+            lua.pushstring(L, "All elements in the array must be strings")
+            lua.error(L)
+            return false
+        }
+
+        c_str := lua.tostring(L, -1)
+        append(arr, strings.clone_from_cstring(c_str))
+        lua.pop(L, 1) // Pop value from the stack
+    }
+
+    return true
+}
 
 // Implement later, when needed
 // lua_set_codesign_custom_options :: proc "c" (L: ^lua.State) -> i32 {
@@ -189,15 +262,6 @@ register_api :: proc(L: ^lua.State) {
 //     }
 //     return 0
 // }
-
-create_res_path :: proc(base_path: string, target_path: string) -> (res_path: string, ok: bool) {
-    rel_path, err := filepath.rel(base_path, target_path)
-    if err != .None {
-        l.warning(.EXPORT_PRESET, fmt.tprintf("Could not get relative path for %s > %s", base_path, target_path))
-        return "", false
-    }
-    return fmt.tprintf("res://%s", rel_path), true
-}
 
 // lua_set_patches :: proc "c" (L: ^lua.State) -> i32 {
 //     context = runtime.default_context()
@@ -250,30 +314,6 @@ lua_set_custom_features :: proc "c" (L: ^lua.State) -> i32 {
 }
 
 
-
-lua_set_include_filter :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        ep.include_filter = s
-    }
-    return 0
-}
-
-lua_set_exclude_filter :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        ep.exclude_filter = s
-    }
-    return 0
-}
-
-// lua_set_export_path :: proc "c" (L: ^lua.State) -> i32 {
-//     context = runtime.default_context()
-//     if s, ok := u.get_string(L, 1); ok {
-//         ep.export_path = s
-//     }
-//     return 0
-// }
 
 lua_set_patch_delta_encoding :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()

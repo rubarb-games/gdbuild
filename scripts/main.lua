@@ -24,7 +24,7 @@ function create_config(args)
 	]]--
 
 	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
-	project_folder(".")
+	project_folder("project")
 	godot_version("4.6.1-stable")
 	project_repo_url("git@github.com:rubarb-games/basalt-01.git")
 	godot_preprocessor("build-script/preprocess.gd")
@@ -42,16 +42,34 @@ function create_export_preset(args, config, version)
 	-- export everything
 	-- export_all()
 
-	-- exclude certain directories and all their files and sub-folders
-	exclude_dirs({
-		"dev-tools",
-		"temp",
-		"build-scripts",
-	})
-	-- calling any include functions aftwards is illegal
-	-- include_dirs(...) works only if export_filter is not set
+	-- exclude certain directories and files
+	-- exclude({
+	-- 	"dev_tools",
+	-- 	"temp",
+	-- 	"scripts/in-use.gd"
+	-- })
 
-	-- include_filter("*.toml,*.ini")
+	-- only export the specified scenes and all its dependencies
+	-- export_scenes({
+	-- 	"scenes/main.tscn"
+	-- })
+
+	-- only export the specified resources and all its dependencies
+	-- export_resources({
+	-- 	"assets/weird.glsl"
+	-- })
+
+	-- include non-resources by wildcard
+	include_filter({
+		"*.toml",
+		"*.ini"
+	})
+
+	-- exclude files and folders from export
+	exclude_filter({
+		"*.secret",
+		"dev_tools"
+	})
 
 	-- script_export_mode("text") -- binary_token, compressed_binary_token
 
