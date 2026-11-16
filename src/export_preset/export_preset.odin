@@ -51,7 +51,7 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
     set_defaults(preset)
 
     // Default to writing to project folder
-    preset_path, join_err := filepath.join({".", "export_presets.cfg"})
+    preset_path, join_err := filepath.join({cfg.folder_project_abs, "export_presets.cfg"})
     if join_err != nil {
         l.error(.CONFIG, fmt.tprintf("Cannot create file path for ./export_presets.cfg. Export presets will not be updated."))
         return

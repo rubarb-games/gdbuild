@@ -36,7 +36,7 @@ function project_settings()
 end
 
 function create_export_preset(args, config, version)
-	name("Thomas's Super Game")
+	name("Thomas's Super Game") -- also set product_name?
 	platform("Quantum computer")
 
 	-- export everything
@@ -72,6 +72,9 @@ function create_export_preset(args, config, version)
 	})
 
 	-- script_export_mode("text") -- binary_token, compressed_binary_token
+	-- binary_format_architecture??
+	-- embed_pck(false)
+	-- console_wrapper(false)
 
 	-- texture_format_s3tc_bptc(true)
 	-- texture_format_etc2_astc(false)
@@ -79,4 +82,12 @@ function create_export_preset(args, config, version)
 
 	-- application_icon("") -- res:// ?
 	-- application_file_version(version.full_string)
+	-- app_icon_interpolation
+	-- app_product_version
+	-- app_company_name
+	-- app_product_name
+	-- app_file_description
+	-- app_copyright
+	-- app_export_angle?
+	-- app_export_d3d12? agility_multiarch?
 end

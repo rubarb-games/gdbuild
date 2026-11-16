@@ -96,14 +96,13 @@ ExportPresetOptions :: struct {
 ExportPreset :: struct {
     name:                  string,
     platform:              string,
-    runnable:              bool,
+    runnable:              bool, // should probably always be true?
     dedicated_server:      bool,
     custom_features:       string,
     export_filter:         string,
     export_files:          [dynamic]string,
     include_filter:        string,
     exclude_filter:        string,
-    // export_path:           string,
     patches:               [dynamic]string,
     patch_delta_encoding:  bool,
     patch_delta_compression_level_zstd: int,
