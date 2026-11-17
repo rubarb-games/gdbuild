@@ -87,6 +87,7 @@ set_defaults :: proc(preset: ^m.ExportPreset) {
 
     // preset.options.custom_template_debug = ""
     // preset.options.custom_template_release = ""
+    
     // preset.options.debug_export_console_wrapper = 0
     // preset.options.binary_format_embed_pck = false
     // preset.options.texture_format_s3tc_bptc = true

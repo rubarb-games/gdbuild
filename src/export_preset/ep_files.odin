@@ -229,6 +229,7 @@ lua_export_resources :: proc "c" (L: ^lua.State) -> i32 {
 lua_set_include_filter :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     
+    // Note: same as in exclude_filter. If this gets used elsewhere, make it a util function
     filters := make([dynamic]string)
     defer {
         for s in filters {

@@ -6,6 +6,8 @@ local c = require("scripts/common")
 -- set_folder_project(0, "...")
 
 -- One config per build. Multiple deployments
+-- TODO: Should also provide a cur_version that collects all info about
+-- the current version. That makes it easier to compare.
 function create_config(args)
 	--[[
 	to support creating multiple configs:
@@ -25,9 +27,17 @@ function create_config(args)
 
 	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
 	project_folder("project")
+	-- After the Godot version has been set, the export templates will be downloaded
 	godot_version("4.6.1-stable")
 	project_repo_url("git@github.com:rubarb-games/basalt-01.git")
 	godot_preprocessor("build-script/preprocess.gd")
+
+	-- Must set type and mode here
+	build_type("demo") -- full, playtest
+	-- as long as only buildnum changes, stay on dev
+	-- when path, minor or major changes, use beta
+	-- explicitly set release?
+	build_mode("release") -- dev, beta, release
 
 	-- already here decide where to deploy? or deploy at all?
 end
@@ -36,8 +46,17 @@ function project_settings()
 end
 
 function create_export_preset(args, config, version)
-	name("Thomas's Super Game") -- also set product_name?
-	platform("Quantum computer")
+	name("Thomas's Super Game")
+	
+	-- build_type = get_build_type()
+	-- export_template(build_type, "folder/template_{build_type}")
+	export_template("debug", "file://...")
+	export_template("release", "file://...")
+
+	-- Unless the custom_template settings have been set, the 
+	-- platform function should verify that the export template
+	-- exists.
+	platform("Linux")
 
 	-- export everything
 	-- export_all()
@@ -80,6 +99,7 @@ function create_export_preset(args, config, version)
 	-- texture_format_etc2_astc(false)
 	-- shader_baker(true)
 
+	-- These ones seem to only apply to windows builds. Maybe also mac?
 	-- application_icon("") -- res:// ?
 	-- application_file_version(version.full_string)
 	-- app_icon_interpolation
