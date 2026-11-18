@@ -1,29 +1,9 @@
 local c = require("scripts/common")
 
--- ATM, create_config works one single config. A future version could
--- support writing multiple configs. By giving each one a unique id,
--- the could be created on the odin side.
--- set_folder_project(0, "...")
-
--- One config per build. Multiple deployments
--- TODO: Should also provide a cur_version that collects all info about
--- the current version. That makes it easier to compare.
-function create_config(args)
-	--[[
-	to support creating multiple configs:
-	id = create_build()
-	version_repo(id, "git@...")
-	
-	a build could be a struct that holds everything related to a build,
-	also temporary vars
-
-	create_export_preset() would be called once per config, and get the build id passed
-	as first argument
-
-	if any of the config functions are called without a build id, a
-	build will be automatically created. Functions called after
-	will use that build
-	]]--
+-- One config -> multiple build targets -> multiple deployments
+function build_config(args)
+	-- Version from previous build is not accessible at this point.
+	-- For any custom versioning, use the update_version callback
 
 	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
 	project_folder("project")
@@ -32,31 +12,74 @@ function create_config(args)
 	project_repo_url("git@github.com:rubarb-games/basalt-01.git")
 	godot_preprocessor("build-script/preprocess.gd")
 
-	-- Must set type and mode here
-	build_type("demo") -- full, playtest
-	-- as long as only buildnum changes, stay on dev
-	-- when path, minor or major changes, use beta
-	-- explicitly set release?
-	build_mode("release") -- dev, beta, release
+	print("build mode: " .. args.build_mode)
 
-	-- already here decide where to deploy? or deploy at all?
+	-- Enable archiving of builds
+	-- Default behaviour could be to make a local copy. In some cases, that might be
+	-- just fine. Other backup services could pick up the archive and take a backup.
+	-- For any other custom archiving options, a lua script plugin could be the
+	-- solution. One entry point, where you can zip, upload and do whatever.
+	-- When archive == true, look for lua callback. If no lua callback, default backup.
+	-- archive(true/false)
+
+	-- type and mode are passed via args.
+	-- In this case, we default to a full dev build unless type and mode
+	-- was set in args.
+	-- if args.build_type == "" then
+	-- 	build_type("full")
+	-- end
+	-- if args.build_mode == "" then
+	-- 	build_type("dev")
+	-- end
+
+	-- If no platform was passed with args, set defaults
+	-- if num_platforms() == 0 then
+	-- 	--platform("win")
+	-- 	platforms({ "win", "linux", "mac", "steamdeck" })
+	-- end
+
+	-- Decide which build gets distributed where
+	-- deploy("win", { "steam", "epic", "winstore" })
+	-- deploy("mac", { "steam", "epic", "macstore" })
+	-- deploy("linux", { "steam", "epic" })
+	-- deploy("steamdeck", { "steam" })
+
+	-- If this pipeline was running on one mac machine, and one Linux machine,
+	-- mac would build the 3 mac editions
+	-- linux would build 3 for windows, 2 for linux and 1 for steamdeck
+
 end
 
-function project_settings()
+function update_version(cur_version)
+	-- read current from cur_version
+	-- write via api
+	-- if this function does not exist, pipeline defaults to bumping the buildnum only
+	-- if this function exists, pipeline interprets that as you wanting to take
+	-- control over versioning. The function can still do nothing, which would cause
+	-- the last version and current version to be the same. We don't want that.
+	-- Therefore, the pipeline will compare the previous and the updated version,
+	-- and stop if they haven't changed.
 end
 
-function create_export_preset(args, config, version)
-	name("Thomas's Super Game")
+-- Will run once per build
+-- Before calling this function, create an instance of project settings.
+-- That way, the api for this function won't have to pass extra params.
+function project_settings(args, version, config)
+end
+
+function export_preset(args, version, config)
+	-- The name of the export preset
+	name("Linux Release")
 	
 	-- build_type = get_build_type()
 	-- export_template(build_type, "folder/template_{build_type}")
-	export_template("debug", "file://...")
-	export_template("release", "file://...")
+	-- export_template("debug", "file://...")
+	-- export_template("release", "file://...")
 
 	-- Unless the custom_template settings have been set, the 
 	-- platform function should verify that the export template
 	-- exists.
-	platform("Linux")
+	platform("Linux") -- will be set automatically
 
 	-- export everything
 	-- export_all()

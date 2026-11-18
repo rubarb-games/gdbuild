@@ -21,10 +21,12 @@ config_hook :: proc(config: ^m.Config, args: ^m.Args) {
 
     cfg = config
 
-    lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
+    script_path := strings.clone_to_cstring(args.script_path)
+    defer delete(script_path)
+    lua.L_dofile(L, script_path)
 
-    if !u.lua_require_function(L, "create_config") {
-        l.fatal(.CONFIG, fmt.tprintf("Cannot find a function called 'create_config' in %s. Abort", args.script_path))
+    if !u.lua_require_function(L, "build_config") {
+        l.fatal(.CONFIG, fmt.tprintf("Cannot find a function called 'build_config' in %s. Abort", args.script_path))
         os.exit(1)
     }
 
@@ -50,6 +52,8 @@ print_config :: proc(cfg: ^m.Config) {
         {"repo_branch", cfg.repo_branch},
         {"repo_commit", cfg.repo_commit},
         {"godot_preprocessor", cfg.godot_preprocessor},
+        {"build_type", cfg.build_type},
+        {"build_mode", cfg.build_mode},
     )
 }
 

@@ -3,17 +3,44 @@ package models
 Args :: struct {
     script_path: string `args:"name=script_path,pos=0" usage:"Path to the main script. Defaults to scripts/main.lua"`,
     live: bool          `args:"name=live"              usage:"A live run will bump the build number, archive the build and deploy to all target platforms."`,
-    version: string     `args:"name=version,v"         usage:"Specify the version to set. If not specified, the last version will be used."`,
-    verbose: bool       `args:"name=verbose"           usage:"Print all the details"`
+    version: string     `args:"name=version"           usage:"Specify the version to set. If not specified, the last version will be used."`,
+    verbose: bool       `args:"name=verbose"           usage:"Print all the details"`,
+    build_type: string  `args:"name=build_type"        usage:"Common types: demo, full, dlc"`,
+    build_mode: string  `args:"name=build_mode"        usage:"Common modes: dev, beta, release"`,
+    
+    // narrow down to one platform is useful when building locally to save time.
+    // Can also be used to publish a patch for one specific target. In that case
+    // the patched target will get a newer version than all the others. The version
+    // will get back in sync with all the others upon the next build that targets 
+    // all platforms.
+    // Can pass a comma separated list of platforms(?)
     // platform: string - specify target platform. Danger! It will cause builds to get out of sync. Maybe it should demand a dry run? if out of sync builds are ok, then saving current version needs to specify platform
-    // mode: string - dev, beta, release. defaults to dev
-    // type: string - demo, full, dlc
+    platforms: string   `args:"name=platforms"         usage:"Comma separated list of platforms to build to."`,
+}
 
-    // flags can use bits, like this: platform=steam,gog,epic to specify a set of options
+Build :: struct {
+    args: ^Args,
+    version: ^Version,
+    config: ^Config,
+    targets: [dynamic]^BuildTarget,
+}
+
+BuildTarget :: struct {
+    name: string,
+    //project_settings: ^ProjectSettings,
+    export_preset: ^ExportPreset,
+    //preprocess function name? Call into lua
+}
+
+DeploymentTarget :: struct {
+    //lua callback
+    //...?
 }
 
 Config :: struct {
-    version_repo: string,
+    version_repo: string, // rename to version_repo_url. Consider creating a
+    // GitRepo struct for holding url, branch and commit hash. Could standardise
+    // git workflow for all connected repos
     folder_project: string,
     folder_project_abs: string,
     godot_version: string,
@@ -25,15 +52,18 @@ Config :: struct {
     repo_commit: string,
 
     // Path to the preprocessor script within the project folder
+    // Preprocessing should happen outside the project.
+    // Could be a lua function name instead. Moved to BuildTarget
     godot_preprocessor: string,
+    
+    build_type: string,
+    build_mode: string,
 }
 
 Version :: struct {
     major: int,
     minor: int,
     build_num: int,
-    build_type: string,
-    build_mode: string,
 }
 
 ExportFiles :: struct {
@@ -49,6 +79,14 @@ CustomizedFiles :: struct {
 ExportResources :: union {
     ExportFiles,
     CustomizedFiles,
+}
+
+ExportPresets :: struct {
+// [runnable_presets]
+// Linux="Linux"
+// "Windows Desktop"="Windows"
+    runnable_presets: map[string]string,
+    preset: [dynamic]^ExportPreset,
 }
 
 ExportPresetOptions :: struct {

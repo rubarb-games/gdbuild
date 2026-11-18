@@ -40,9 +40,12 @@ table :: proc(title: string, lines: ..[]any) {
             cell_str := fmt.aprintf("%v", cell)
             if i == 0 {
                 s := strings.left_justify(cell_str, cols[i], " ")
-                append(&cells, strings.right_justify(s, len(s) + 2, " "))
+                s_right := strings.right_justify(s, len(s) + 2, " ")
+                defer delete(s)
+                append(&cells, s_right)
             } else {
-                append(&cells, strings.left_justify(cell_str, cols[i], " "))
+                s_left := strings.left_justify(cell_str, cols[i], " ")
+                append(&cells, s_left)
             }
         }
 
@@ -55,6 +58,14 @@ table :: proc(title: string, lines: ..[]any) {
     }
     
     fmt.println("")
+}
+
+strip_whitespace :: proc(s: string) -> string {
+    // Remove all types of whitespace from the entire string
+    parts := strings.fields(s)
+    defer delete(parts)
+    // Stitch them together to form a clean string
+    return strings.concatenate(parts)
 }
 
 walk_tree :: proc(abs_path: string, path_buffer: ^[dynamic]string) -> os.Error {
@@ -161,14 +172,11 @@ lua_pass_args :: proc(L: ^lua.State, args: ^m.Args) {
     lua.newtable(L)
 
     push_string(L, "script_path", args.script_path)
-
-    lua.pushboolean(L, b32(args.live))
-    lua.setfield(L, -2, "live")
-
     push_string(L, "version", args.version)
-
-    lua.pushboolean(L, b32(args.verbose))
-    lua.setfield(L, -2, "verbose")
+    push_bool(L, "live", args.live)
+    push_bool(L, "verbose", args.verbose)
+    push_string(L, "build_type", args.build_type)
+    push_string(L, "build_mode", args.build_mode)
 }
 
 lua_pass_config :: proc(L: ^lua.State, cfg: ^m.Config) {
@@ -182,6 +190,8 @@ lua_pass_config :: proc(L: ^lua.State, cfg: ^m.Config) {
     push_string(L, "repo_branch", cfg.repo_branch)
     push_string(L, "repo_commit", cfg.repo_commit)
     push_string(L, "godot_preprocessor", cfg.godot_preprocessor)
+    push_string(L, "build_type", cfg.build_type)
+    push_string(L, "build_mode", cfg.build_mode)
 }
 
 lua_pass_version :: proc(L: ^lua.State, v: ^m.Version) {
@@ -190,8 +200,6 @@ lua_pass_version :: proc(L: ^lua.State, v: ^m.Version) {
     push_int(L, "major", v.major)
     push_int(L, "minor", v.minor)
     push_int(L, "build_num", v.build_num)
-    push_string(L, "build_type", v.build_type)
-    push_string(L, "build_mode", v.build_mode)
 }
 
 @(private = "file")
@@ -203,5 +211,11 @@ push_string :: proc(L: ^lua.State, field_name: cstring, field_value: string) {
 @(private = "file")
 push_int :: proc(L: ^lua.State, field_name: cstring, field_value: int) {
     lua.pushinteger(L, lua.Integer(field_value))
+    lua.setfield(L, -2, field_name)
+}
+
+@(private = "file")
+push_bool :: proc(L: ^lua.State, field_name: cstring, field_value: bool) {
+    lua.pushboolean(L, b32(field_value))
     lua.setfield(L, -2, field_name)
 }

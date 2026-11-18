@@ -9,26 +9,24 @@ import m "models"
 import u "utils"
 
 parse_version_string :: proc(v: ^m.Version, version_str: string) -> bool {
-    parts, err_parts := strings.split(version_str, " ")
+    version_clean := u.strip_whitespace(version_str)
+    defer delete(version_clean)
+
+    versions, err_parts := strings.split(version_clean, ".")
+    // defer {
+    //     for v in versions {
+    //         delete(v)
+    //     }
+    //     delete(versions)
+    // }
+    
     if err_parts != nil {
-        l.info(.CONFIG, fmt.tprintf("Cannot extract build type or mode from version string: %s", version_str))
-        // could still look for version
-        return false
-    }
-
-    if len(parts) != 3 {
-        l.info(.CONFIG, fmt.tprintf("Expected a 3 part version string [version] [type] [mode]: %s", version_str))
-        return false
-    }
-
-    versions, err_versions := strings.split(parts[0], ".")
-    if err_versions != nil {
-        l.info(.CONFIG, fmt.tprintf("Expected at least one . in the version: %s", parts[0]))
+        l.info(.CONFIG, fmt.tprintf("Cannot extract build type or mode from version string: %s", version_clean))
         return false
     }
 
     if len(versions) != 3 {
-        l.info(.CONFIG, fmt.tprintf("Version is not formatted correctly [major].[minor].[build_num]: %s", parts[0]))
+        l.info(.CONFIG, fmt.tprintf("Version is not formatted correctly [major].[minor].[build_num]: %s", version_clean))
         return false
     }
 
@@ -42,9 +40,6 @@ parse_version_string :: proc(v: ^m.Version, version_str: string) -> bool {
         v.build_num = build_num
     }
 
-    v.build_type = parts[1]
-    v.build_mode = parts[2]
-
     return true
 }
 
@@ -53,7 +48,5 @@ print_version :: proc(v: ^m.Version) {
         {"major", v.major},
         {"minor", v.minor},
         {"build_num", v.build_num},
-        {"build_type", v.build_type},
-        {"build_mode", v.build_mode},
     )
 }

@@ -30,8 +30,8 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
 
     lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
 
-    if !u.lua_require_function(L, "create_export_preset") {
-        l.fatal(.EXPORT_PRESET, fmt.tprintf("No 'create_export_preset' function found in %s. Cannot export Godot project", args.script_path))
+    if !u.lua_require_function(L, "export_preset") {
+        l.fatal(.EXPORT_PRESET, fmt.tprintf("No 'export_preset' function found in %s. Cannot export Godot project", args.script_path))
         os.exit(1)
     }
 

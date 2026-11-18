@@ -1,14 +1,38 @@
 package main
 
 import "core:fmt"
+import "core:strings"
+import "core:mem"
 
+import u "utils"
 import l "logger"
 import m "models"
 import ep "export_preset"
 
 main :: proc() {
-    fmt.println("== gdbuild ========================================================")
+    track: mem.Tracking_Allocator
+    mem.tracking_allocator_init(&track, context.allocator)
+    context.allocator = mem.tracking_allocator(&track)
 
+    defer {
+        // if len(track.allocation_map) > 0 {
+        //     fmt.eprintf("=== %v allocations not freed: ===\n", len(track.allocation_map))
+        //     for _, entry in track.allocation_map {
+        //         fmt.eprintf("- %v bytes @ %v\n", entry.size, entry.location)
+        //     }
+        // }
+        if len(track.bad_free_array) > 0 {
+            fmt.eprintf("=== %v incorrect frees: ===\n", len(track.bad_free_array))
+            for entry in track.bad_free_array {
+                fmt.eprintf("- %p @ %v\n", entry.memory, entry.location)
+            }
+        }
+        mem.tracking_allocator_destroy(&track)
+    }
+
+    fmt.println("== gdbuild ========================================================\n")
+
+    // Default command line arguments
     args := m.Args {
         script_path = "./scripts/main.lua",
         version = "0.0",
@@ -16,6 +40,18 @@ main :: proc() {
         live = false
     }
 
+    // Default config
+    cfg := m.Config {
+        repo_branch = "main",
+    }
+
+    build := m.Build {
+        args = &args,
+        config = &cfg,
+        targets = [dynamic]^m.BuildTarget{},
+    }
+
+    // Command line arguments
     parse_args(&args)
     validate_args(&args)
     print_args(&args)
@@ -24,19 +60,31 @@ main :: proc() {
         l.set_log_level(.TRACE)
     }
 
-    cfg := m.Config {
-        repo_branch = "main",
-        folder_project = "project",
-    }
+    create_build_targets(args.platforms, &build)
 
+    // Prepare Config
+    cfg.build_type = args.build_type
+    cfg.build_mode = args.build_mode
+
+    // Build Config
     config_hook(&cfg, &args)
     print_config(&cfg)
+
+    // post config:
+    // * make directories
+    // * download editor
+    // * download eport templates
+    // * checkout main repo
 
     // * checkout version repo
     // * get and verify the version files
     // * get version from args
-    // * bump build num
-    // > lua.after_version_updated() [optional] - could be used for custom handling of versioning strategy
+    // * make copy of current version
+    // > lua.update_version(current) [optional]
+    // * if lua callback exists, but new version is not the same as current:
+    //   * ABORT. Must make a change to version
+    // * if lua callback does NOT exist:
+    //   * bump build num
     // * print config and version info
 
     version: m.Version
@@ -46,13 +94,23 @@ main :: proc() {
     }
     print_version(&version)
 
-    // > lua.project_settings() [optional]
-    //   - read project settings
+    // > lua.project_settings()
+    //   - load project settings from project folder
+    //   - parse? It's only ini
     //   - expose functions for overriding and removing settings
-    // * make directories
-    // * download editor
-    // * download eport templates
-    // * checkout main repo
+    //   - maybe a similar api as Godot's ProjectSettings would do?
+    //   set("window/fullscreen", true)
+    //   local val = get_bool("section/value")
+
+    // for build_target in build.targets {
+    //     ep.hook(build_target.export_preset, &args, &cfg, &version)
+    // }
+
+    // > lua.pre_export() [optional]
+    //   use for any last minute changes to the project
+    //   could perhaps have a similar hook a bit earlier
+
+
     // > lua.after_repo_checkout() [optional]
     // * preprocess
     // * reimport assets
@@ -65,14 +123,41 @@ main :: proc() {
     // * init target
     // * deploy
 
-    // maybe a deployment target could be a lua script? makes it easy to add new ones
-    // archiving needs some config. directory, naming convention, zip or not, upload?
-
-    exp_options := m.ExportPresetOptions {}
-    exp_preset := m.ExportPreset {
-        options = &exp_options
-    }
-
-    ep.hook(&exp_preset, &args, &cfg, &version)
 }
 
+create_build_targets :: proc(platforms_args: string, build:^m.Build) {
+    platforms_str := u.strip_whitespace(platforms_args)
+    defer delete(platforms_str)
+
+    platforms := strings.split(platforms_str, ",")
+    // defer {
+    //     for s in platforms {
+    //         delete(s)
+    //     }
+    //     delete(platforms)
+    // }
+
+    for platform in platforms {
+
+        platform_name := ""
+        switch platform {
+            case "win":       platform_name = "Windows Desktop"
+            case "linux":     platform_name = "Linux"
+            case "mac":       platform_name = "macOS"
+            case "steamdeck": platform_name = "Linux"
+        }
+
+        exp_options := m.ExportPresetOptions {}
+        exp_preset := m.ExportPreset {
+            platform = platform_name,
+            options = &exp_options,
+        }
+
+        build_target := m.BuildTarget {
+            name = platform,
+            export_preset = &exp_preset,
+        }
+
+        append(&build.targets, &build_target)
+    }
+}

@@ -35,5 +35,8 @@ print_args :: proc(args: ^m.Args) {
         {"live", args.live},
         {"version", args.version},
         {"verbose", args.verbose},
+        {"build_type", args.build_type},
+        {"build_mode", args.build_mode},
+        {"platforms", args.platforms},
     )
 }
