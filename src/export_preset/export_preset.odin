@@ -85,8 +85,17 @@ set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
     preset.dedicated_server = false
 
     // Debug
-    preset.options.debug_export_console_wrapper = 0
+    preset.options.debug_export_console_wrapper = CONSOLE_WRAPPER_NO
     
+    // Resources
+    preset.script_export_mode = SCRIPT_EXPORT_MODE_TEXT
+    preset.options.binary_format_embed_pck = false
+    preset.options.texture_format_s3tc_bptc = false
+    preset.options.texture_format_etc2_astc = false
+    preset.options.shader_baker_enabled = false
+    preset.options.binary_format_architecture = BINARY_ARCHITECTURE_X86_64
+
+
     // preset.custom_features = ""
     // Unused, afaik. Will be handled by the godot export cli command
     // preset.export_path = ""
@@ -102,17 +111,10 @@ set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
     // preset.seed = 0
     // preset.encrypt_pck = false
     // preset.encrypt_directory = false
-    // preset.script_export_mode = 2
 
     // preset.options.custom_template_debug = ""
     // preset.options.custom_template_release = ""
     
-    // preset.options.binary_format_embed_pck = false
-    // preset.options.texture_format_s3tc_bptc = true
-    // preset.options.texture_format_etc2_astc = false
-    // preset.options.shader_baker_enabled = true
-    // preset.options.binary_format_architecture = "x86_64"
-
     // preset.options.codesign_enable = false
     // preset.options.codesign_timestamp = true
     // preset.options.codesign_timestamp_server_url = ""
@@ -146,16 +148,9 @@ set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
 register_api :: proc(L: ^lua.State) {
     files_api(L)
     debug_api(L)
+    resources_api(L)
     
     lua.register(L, "name", lua_set_name)
-
-    // resources
-    lua.register(L, "script_export_mode", lua_set_script_export_mode)
-    lua.register(L, "binary_format_embed_pck", lua_set_binary_format_embed_pck)
-    lua.register(L, "texture_format_s3tc_bptc", lua_set_texture_format_s3tc_bptc)
-    lua.register(L, "texture_format_etc2_astc", lua_set_texture_format_etc2_astc)
-    lua.register(L, "shader_baker_enabled", lua_set_shader_baker_enabled)
-    lua.register(L, "binary_format_architecture", lua_set_binary_format_architecture)
     
     // windows
     lua.register(L, "application_modify_resources", lua_set_application_modify_resources)
@@ -305,23 +300,6 @@ lua_set_name :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-lua_set_platform :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        ep.platform = s
-    }
-    return 0
-}
-
-// unnecessary. always true
-lua_set_runnable :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if b, ok := u.get_bool(L, 1); ok {
-        ep.runnable = b
-    }
-    return 0
-}
-
 lua_set_custom_features :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     if s, ok := u.get_string(L, 1); ok {
@@ -329,8 +307,6 @@ lua_set_custom_features :: proc "c" (L: ^lua.State) -> i32 {
     }
     return 0
 }
-
-
 
 lua_set_patch_delta_encoding :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
@@ -412,39 +388,6 @@ lua_set_encrypt_directory :: proc "c" (L: ^lua.State) -> i32 {
     return 0
 }
 
-lua_set_script_export_mode :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-
-    mode, ok_mode := u.get_string(L, 1)
-    if !ok_mode {
-        l.warning(.EXPORT_PRESET, "Cannot get script_export_mode from lua")
-        return 1
-    }
-
-    ExportMode :: enum {
-        Text = 0,
-        BinaryToken = 1,
-        CompressedBinaryToken = 2,
-    }
-
-    export_mode: ExportMode
-
-    switch mode {
-        case "text":
-            export_mode = .Text
-        case "binary_token":
-            export_mode = .BinaryToken
-        case "compressed_binary_token":
-            export_mode = .CompressedBinaryToken
-        case:
-            l.error(.EXPORT_PRESET, fmt.tprintf("Invalid script export mode: %s", export_mode))
-            return 1
-    }
-
-    ep.script_export_mode = int(export_mode)
-    return 0
-}
-
 lua_set_custom_template_debug :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     if s, ok := u.get_string(L, 1); ok {
@@ -457,46 +400,6 @@ lua_set_custom_template_release :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     if s, ok := u.get_string(L, 1); ok {
         ep.options.custom_template_release = s
-    }
-    return 0
-}
-
-lua_set_binary_format_embed_pck :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if b, ok := u.get_bool(L, 1); ok {
-        ep.options.binary_format_embed_pck = b
-    }
-    return 0
-}
-
-lua_set_texture_format_s3tc_bptc :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if b, ok := u.get_bool(L, 1); ok {
-        ep.options.texture_format_s3tc_bptc = b
-    }
-    return 0
-}
-
-lua_set_texture_format_etc2_astc :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if b, ok := u.get_bool(L, 1); ok {
-        ep.options.texture_format_etc2_astc = b
-    }
-    return 0
-}
-
-lua_set_shader_baker_enabled :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if b, ok := u.get_bool(L, 1); ok {
-        ep.options.shader_baker_enabled = b
-    }
-    return 0
-}
-
-lua_set_binary_format_architecture :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if s, ok := u.get_string(L, 1); ok {
-        ep.options.binary_format_architecture = s
     }
     return 0
 }

@@ -111,7 +111,7 @@ function export_preset(args, version, config, platform)
 	-- 	"dev_tools"
 	-- })
 
-	-- script_export_mode("text") -- binary_token, compressed_binary_token
+	script_export_mode("text") -- binary_token, compressed_binary_token
 	-- binary_format_architecture??
 	-- embed_pck(false)
 	export_console_wrapper("no") -- "debug_only", "debug_and_release"
