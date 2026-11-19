@@ -79,13 +79,8 @@ function export_preset(args, version, config, platform)
 	print(_name)
 	name(_name)
 	
-	-- build_type = get_build_type()
-	-- export_template(build_type, "folder/template_{build_type}")
-	-- export_template("debug", "file://...")
-	-- export_template("release", "file://...")
-
 	-- export everything
-	-- export_all()
+	export_all()
 
 	-- exclude certain directories and files
 	-- exclude({
