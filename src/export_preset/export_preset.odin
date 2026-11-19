@@ -80,9 +80,13 @@ set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
 
     preset.runnable = true
 
+    // Files
     preset.export_files = [dynamic]string{}
     preset.dedicated_server = false
 
+    // Debug
+    preset.options.debug_export_console_wrapper = 0
+    
     // preset.custom_features = ""
     // Unused, afaik. Will be handled by the godot export cli command
     // preset.export_path = ""
@@ -103,12 +107,12 @@ set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
     // preset.options.custom_template_debug = ""
     // preset.options.custom_template_release = ""
     
-    // preset.options.debug_export_console_wrapper = 0
     // preset.options.binary_format_embed_pck = false
     // preset.options.texture_format_s3tc_bptc = true
     // preset.options.texture_format_etc2_astc = false
     // preset.options.shader_baker_enabled = true
     // preset.options.binary_format_architecture = "x86_64"
+
     // preset.options.codesign_enable = false
     // preset.options.codesign_timestamp = true
     // preset.options.codesign_timestamp_server_url = ""
@@ -141,16 +145,19 @@ set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
 @(private = "file")
 register_api :: proc(L: ^lua.State) {
     files_api(L)
+    debug_api(L)
     
     lua.register(L, "name", lua_set_name)
+
+    // resources
     lua.register(L, "script_export_mode", lua_set_script_export_mode)
-    lua.register(L, "debug_export_console_wrapper", lua_set_debug_export_console_wrapper)
     lua.register(L, "binary_format_embed_pck", lua_set_binary_format_embed_pck)
     lua.register(L, "texture_format_s3tc_bptc", lua_set_texture_format_s3tc_bptc)
     lua.register(L, "texture_format_etc2_astc", lua_set_texture_format_etc2_astc)
     lua.register(L, "shader_baker_enabled", lua_set_shader_baker_enabled)
     lua.register(L, "binary_format_architecture", lua_set_binary_format_architecture)
     
+    // windows
     lua.register(L, "application_modify_resources", lua_set_application_modify_resources)
     lua.register(L, "application_icon", lua_set_application_icon)
     lua.register(L, "application_console_wrapper_icon", lua_set_application_console_wrapper_icon)
@@ -450,14 +457,6 @@ lua_set_custom_template_release :: proc "c" (L: ^lua.State) -> i32 {
     context = runtime.default_context()
     if s, ok := u.get_string(L, 1); ok {
         ep.options.custom_template_release = s
-    }
-    return 0
-}
-
-lua_set_debug_export_console_wrapper :: proc "c" (L: ^lua.State) -> i32 {
-    context = runtime.default_context()
-    if i, ok := u.get_int(L, 1); ok {
-        ep.options.debug_export_console_wrapper = i
     }
     return 0
 }
