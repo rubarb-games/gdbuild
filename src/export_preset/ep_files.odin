@@ -16,18 +16,6 @@ FILTER_SCENES           :: "scenes"         // only tscn files are valid
 FILTER_RESOURCES        :: "resources"      // anything but tscn files
 FILTER_CUSTOMIZED       :: "customized"     // dedicated server
 
-files_set_default :: proc(preset: ^m.ExportPreset) {
-    if preset.export_filter == "" {
-        preset.export_filter = FILTER_ALL_RESOURCES
-    }
-
-    if preset.export_files == nil || len(preset.export_files) == 0 {
-        preset.export_files = [dynamic]string{}
-    }
-
-    // preset.dedicated_server = false
-}
-
 files_api :: proc(L: ^lua.State) {
     lua.register(L, "export_all", lua_export_all) // no args
     lua.register(L, "exclude", lua_exclude_files_and_dirs) // table

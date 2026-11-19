@@ -18,17 +18,20 @@ cfg: ^m.Config
 // for lua to add custom settings for addons, a more generic function for setting key value pairs
 // should be accessible. set_bool("imgui/debug", false), set_string, set_int, set_array ..
 
-hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version: ^m.Version) {
+hook :: proc(build_target: ^m.BuildTarget, args: ^m.Args, config: ^m.Config, version: ^m.Version) {
     L: ^lua.State
     L = lua.L_newstate()
     lua.L_openlibs(L) // add standard libs to lua script
 
-    ep = preset
+    ep = build_target.export_preset
     cfg = config
 
     register_api(L)
+    set_defaults(ep, build_target)
 
-    lua.L_dofile(L, strings.clone_to_cstring(args.script_path))
+    script_path := strings.clone_to_cstring(args.script_path)
+    defer delete(script_path)
+    lua.L_dofile(L, script_path)
 
     if !u.lua_require_function(L, "export_preset") {
         l.fatal(.EXPORT_PRESET, fmt.tprintf("No 'export_preset' function found in %s. Cannot export Godot project", args.script_path))
@@ -36,19 +39,18 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
     }
 
     u.lua_pass_args(L, args)
-    u.lua_pass_config(L, config)
     u.lua_pass_version(L, version)
+    u.lua_pass_config(L, config)
+    lua.pushstring(L, strings.clone_to_cstring(build_target.name))
 
     // Call the function
-    if lua.pcall(L, 3, 0, 0) != 0 {
+    if lua.pcall(L, 4, 0, 0) != 0 {
         err_msg := lua.tostring(L, -1)
         l.error(.EXPORT_PRESET, strings.clone_from_cstring(err_msg))
         fmt.println("Lua err: ", err_msg)
     }
 
-    // Some settings needs to be set. Set them to default
-    // values unless they have already been set by the lua script.
-    set_defaults(preset)
+    set_required(ep)
 
     // Default to writing to project folder
     preset_path, join_err := filepath.join({cfg.folder_project_abs, "export_presets.cfg"})
@@ -61,14 +63,27 @@ hook :: proc(preset: ^m.ExportPreset, args: ^m.Args, config: ^m.Config, version:
 }
 
 @(private = "file")
-set_defaults :: proc(preset: ^m.ExportPreset) {
-    // preset.name = ""
-    // preset.platform = ""
-    // preset.runnable = true
+set_required :: proc(preset: ^m.ExportPreset) {
+    if preset.export_filter == "" {
+        preset.export_filter = FILTER_ALL_RESOURCES
+    }
+}
+
+@(private = "file")
+set_defaults :: proc(preset: ^m.ExportPreset, build_target: ^m.BuildTarget) {
+    switch build_target.name {
+        case "win":       preset.platform = "Windows Desktop"
+        case "linux":     preset.platform = "Linux"
+        case "mac":       preset.platform = "macOS"
+        case "steamdeck": preset.platform = "Linux"
+    }
+
+    preset.runnable = true
+
+    preset.export_files = [dynamic]string{}
+    preset.dedicated_server = false
+
     // preset.custom_features = ""
-
-    files_set_default(preset)
-
     // Unused, afaik. Will be handled by the godot export cli command
     // preset.export_path = ""
 
@@ -125,39 +140,17 @@ set_defaults :: proc(preset: ^m.ExportPreset) {
 
 @(private = "file")
 register_api :: proc(L: ^lua.State) {
-    lua.register(L, "name", lua_set_name)
-    lua.register(L, "platform", lua_set_platform)
-    // lua.register(L, "runnable", lua_set_runnable)
-    lua.register(L, "custom_features", lua_set_custom_features)
-
     files_api(L)
-
-    // lua.register(L, "patches", lua_set_patches)
-    lua.register(L, "patch_delta_encoding", lua_set_patch_delta_encoding)
-    lua.register(L, "patch_delta_compression_level_zstd", lua_set_patch_delta_compression_level_zstd)
-    lua.register(L, "patch_delta_min_reduction", lua_set_patch_delta_min_reduction)
-    lua.register(L, "patch_delta_include_filters", lua_set_patch_delta_include_filters)
-    lua.register(L, "patch_delta_exclude_filters", lua_set_patch_delta_exclude_filters)
-    lua.register(L, "encryption_include_filters", lua_set_encryption_include_filters)
-    lua.register(L, "encryption_exclude_filters", lua_set_encryption_exclude_filters)
-    lua.register(L, "seed", lua_set_seed)
-    lua.register(L, "encrypt_pck", lua_set_encrypt_pck)
-    lua.register(L, "encrypt_directory", lua_set_encrypt_directory)
+    
+    lua.register(L, "name", lua_set_name)
     lua.register(L, "script_export_mode", lua_set_script_export_mode)
-    lua.register(L, "custom_template_debug", lua_set_custom_template_debug)
-    lua.register(L, "custom_template_release", lua_set_custom_template_release)
     lua.register(L, "debug_export_console_wrapper", lua_set_debug_export_console_wrapper)
     lua.register(L, "binary_format_embed_pck", lua_set_binary_format_embed_pck)
     lua.register(L, "texture_format_s3tc_bptc", lua_set_texture_format_s3tc_bptc)
     lua.register(L, "texture_format_etc2_astc", lua_set_texture_format_etc2_astc)
     lua.register(L, "shader_baker_enabled", lua_set_shader_baker_enabled)
     lua.register(L, "binary_format_architecture", lua_set_binary_format_architecture)
-    // lua.register(L, "codesign_enable", lua_set_codesign_enable)
-    // lua.register(L, "codesign_timestamp", lua_set_codesign_timestamp)
-    // lua.register(L, "codesign_timestamp_server_url", lua_set_codesign_timestamp_server_url)
-    // lua.register(L, "codesign_digest_algorithm", lua_set_codesign_digest_algorithm)
-    // lua.register(L, "codesign_description", lua_set_codesign_description)
-    // lua.register(L, "codesign_custom_options", lua_set_codesign_custom_options)
+    
     lua.register(L, "application_modify_resources", lua_set_application_modify_resources)
     lua.register(L, "application_icon", lua_set_application_icon)
     lua.register(L, "application_console_wrapper_icon", lua_set_application_console_wrapper_icon)
@@ -172,13 +165,38 @@ register_api :: proc(L: ^lua.State) {
     lua.register(L, "application_export_angle", lua_set_application_export_angle)
     lua.register(L, "application_export_d3d12", lua_set_application_export_d3d12)
     lua.register(L, "application_d3d12_agility_sdk_multiarch", lua_set_application_d3d12_agility_sdk_multiarch)
-    lua.register(L, "ssh_remote_deploy_enabled", lua_set_ssh_remote_deploy_enabled)
-    lua.register(L, "ssh_remote_deploy_host", lua_set_ssh_remote_deploy_host)
-    lua.register(L, "ssh_remote_deploy_port", lua_set_ssh_remote_deploy_port)
-    lua.register(L, "ssh_remote_deploy_extra_args_ssh", lua_set_ssh_remote_deploy_extra_args_ssh)
-    lua.register(L, "ssh_remote_deploy_extra_args_scp", lua_set_ssh_remote_deploy_extra_args_scp)
-    lua.register(L, "ssh_remote_deploy_run_script", lua_set_ssh_remote_deploy_run_script)
-    lua.register(L, "ssh_remote_deploy_cleanup_script", lua_set_ssh_remote_deploy_cleanup_script)
+
+    // lua.register(L, "custom_features", lua_set_custom_features)
+
+    // lua.register(L, "patches", lua_set_patches)
+    // lua.register(L, "patch_delta_encoding", lua_set_patch_delta_encoding)
+    // lua.register(L, "patch_delta_compression_level_zstd", lua_set_patch_delta_compression_level_zstd)
+    // lua.register(L, "patch_delta_min_reduction", lua_set_patch_delta_min_reduction)
+    // lua.register(L, "patch_delta_include_filters", lua_set_patch_delta_include_filters)
+    // lua.register(L, "patch_delta_exclude_filters", lua_set_patch_delta_exclude_filters)
+
+    // lua.register(L, "encryption_include_filters", lua_set_encryption_include_filters)
+    // lua.register(L, "encryption_exclude_filters", lua_set_encryption_exclude_filters)
+    // lua.register(L, "seed", lua_set_seed)
+    // lua.register(L, "encrypt_pck", lua_set_encrypt_pck)
+    // lua.register(L, "encrypt_directory", lua_set_encrypt_directory)
+    // lua.register(L, "custom_template_debug", lua_set_custom_template_debug)
+    // lua.register(L, "custom_template_release", lua_set_custom_template_release)
+
+    // lua.register(L, "codesign_enable", lua_set_codesign_enable)
+    // lua.register(L, "codesign_timestamp", lua_set_codesign_timestamp)
+    // lua.register(L, "codesign_timestamp_server_url", lua_set_codesign_timestamp_server_url)
+    // lua.register(L, "codesign_digest_algorithm", lua_set_codesign_digest_algorithm)
+    // lua.register(L, "codesign_description", lua_set_codesign_description)
+    // lua.register(L, "codesign_custom_options", lua_set_codesign_custom_options)
+
+    // lua.register(L, "ssh_remote_deploy_enabled", lua_set_ssh_remote_deploy_enabled)
+    // lua.register(L, "ssh_remote_deploy_host", lua_set_ssh_remote_deploy_host)
+    // lua.register(L, "ssh_remote_deploy_port", lua_set_ssh_remote_deploy_port)
+    // lua.register(L, "ssh_remote_deploy_extra_args_ssh", lua_set_ssh_remote_deploy_extra_args_ssh)
+    // lua.register(L, "ssh_remote_deploy_extra_args_scp", lua_set_ssh_remote_deploy_extra_args_scp)
+    // lua.register(L, "ssh_remote_deploy_run_script", lua_set_ssh_remote_deploy_run_script)
+    // lua.register(L, "ssh_remote_deploy_cleanup_script", lua_set_ssh_remote_deploy_cleanup_script)
 }
 
 // Utils functions

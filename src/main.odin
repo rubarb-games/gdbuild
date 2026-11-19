@@ -87,6 +87,17 @@ main :: proc() {
     //   * bump build num
     // * print config and version info
 
+    // Could maybe pass a regex string from lua to odin, to instruct odin of how
+    // to read the version string. Not everyone follows the same convention.
+    // [0-9]+(major).[0-9]+(minor).[0-9]+(buildnum)
+    // Something like this to indicate what a version string look like, and what
+    // each part is called
+
+    // When passing a full version string to args, buildnum should not be bumped.
+    // That will allow the build pipeline to be distributed over multiple machines.
+    // One machine gets the instructions, prepares the version number, then
+    // delegates to other build units.
+
     version: m.Version
     // Temporary, accept a full version string from args, break it down to components
     if args.version != "0.0" { // is not default value
@@ -94,35 +105,52 @@ main :: proc() {
     }
     print_version(&version)
 
-    // > lua.project_settings()
-    //   - load project settings from project folder
-    //   - parse? It's only ini
-    //   - expose functions for overriding and removing settings
-    //   - maybe a similar api as Godot's ProjectSettings would do?
-    //   set("window/fullscreen", true)
-    //   local val = get_bool("section/value")
+    // checkout from git
 
-    // for build_target in build.targets {
-    //     ep.hook(build_target.export_preset, &args, &cfg, &version)
-    // }
+    // pre_build hook
+    // * Would make it possible to make changes that are common for all build targets
+    // * make it possible to trigger a re-import of assets from lua
 
-    // > lua.pre_export() [optional]
-    //   use for any last minute changes to the project
-    //   could perhaps have a similar hook a bit earlier
+    // duplicate project tree, once for each target?
+    // * would make it safer to make changes per target
 
+    for build_target in build.targets {
+        
+        l.info(.CONFIG, fmt.tprintf("Current build target: %v", build_target.name))
 
-    // > lua.after_repo_checkout() [optional]
-    // * preprocess
-    // * reimport assets
-    // > lua.create_export_preset
-    // * export project
-    // > lua.after_project_export() [optional]
-    // * update version repo
-    // * archive build
-    // for each deployment target
-    // * init target
-    // * deploy
+        // Project Settings
+        // overwrites project settings
+        //   - load project settings from project folder
+        //   - parse? It's only ini
+        //   - expose functions for overriding and removing settings
+        //   - maybe a similar api as Godot's ProjectSettings would do?
+        //   set("window/fullscreen", true)
+        //   local val = get_bool("section/value")
+        
+        // Export Preset
+        // overwrites the preset
+        ep.hook(build_target, &args, &cfg, &version)
+        
+        // pre_export hook
+        // * expose a reimport_assets function to lua
 
+        // export project
+
+        // post_export hook
+        // * get access to build dir and artifacts
+        // * can add files to artifacts (like readme, whatever)
+    }
+
+    // update version repo
+    // * unless a full version string was passed to args
+
+    // for each artifact:
+
+        // archive build
+        // * if enabled
+
+        // for each distribution target:
+            // distribute
 }
 
 create_build_targets :: proc(platforms_args: string, build:^m.Build) {
@@ -130,34 +158,20 @@ create_build_targets :: proc(platforms_args: string, build:^m.Build) {
     defer delete(platforms_str)
 
     platforms := strings.split(platforms_str, ",")
-    // defer {
-    //     for s in platforms {
-    //         delete(s)
-    //     }
-    //     delete(platforms)
-    // }
+    defer delete(platforms) // no need to free each element, as split produces an
+    // array of pointers into the original string
 
     for platform in platforms {
 
-        platform_name := ""
-        switch platform {
-            case "win":       platform_name = "Windows Desktop"
-            case "linux":     platform_name = "Linux"
-            case "mac":       platform_name = "macOS"
-            case "steamdeck": platform_name = "Linux"
-        }
+        exp_options := new(m.ExportPresetOptions)
+        
+        exp_preset := new(m.ExportPreset)
+        exp_preset.options = exp_options
 
-        exp_options := m.ExportPresetOptions {}
-        exp_preset := m.ExportPreset {
-            platform = platform_name,
-            options = &exp_options,
-        }
+        build_target := new(m.BuildTarget)
+        build_target.name = strings.clone(platform)
+        build_target.export_preset = exp_preset
 
-        build_target := m.BuildTarget {
-            name = platform,
-            export_preset = &exp_preset,
-        }
-
-        append(&build.targets, &build_target)
+        append(&build.targets, build_target)
     }
 }

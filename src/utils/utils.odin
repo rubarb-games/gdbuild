@@ -202,19 +202,16 @@ lua_pass_version :: proc(L: ^lua.State, v: ^m.Version) {
     push_int(L, "build_num", v.build_num)
 }
 
-@(private = "file")
 push_string :: proc(L: ^lua.State, field_name: cstring, field_value: string) {
     lua.pushstring(L, strings.clone_to_cstring(field_value))
     lua.setfield(L, -2, field_name)
 }
 
-@(private = "file")
 push_int :: proc(L: ^lua.State, field_name: cstring, field_value: int) {
     lua.pushinteger(L, lua.Integer(field_value))
     lua.setfield(L, -2, field_name)
 }
 
-@(private = "file")
 push_bool :: proc(L: ^lua.State, field_name: cstring, field_value: bool) {
     lua.pushboolean(L, b32(field_value))
     lua.setfield(L, -2, field_name)

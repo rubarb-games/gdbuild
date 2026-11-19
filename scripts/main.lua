@@ -5,14 +5,21 @@ function build_config(args)
 	-- Version from previous build is not accessible at this point.
 	-- For any custom versioning, use the update_version callback
 
+	-- enable option to turn off version repo. Or just not set a repo.
+	-- that will enable a pipeline to simply use the version string passed
+	-- via args.
 	version_repo("git@github.com:rubarb-games/basalt-01-version.git")
+	-- maybe expose some simple git functions to lua, to not embed
+	-- the version repo feature?
+
 	project_folder("project")
 	-- After the Godot version has been set, the export templates will be downloaded
 	godot_version("4.6.1-stable")
 	project_repo_url("git@github.com:rubarb-games/basalt-01.git")
 	godot_preprocessor("build-script/preprocess.gd")
 
-	print("build mode: " .. args.build_mode)
+	-- print("build mode: " .. args.build_mode .. "!?")
+
 
 	-- Enable archiving of builds
 	-- Default behaviour could be to make a local copy. In some cases, that might be
@@ -67,19 +74,15 @@ end
 function project_settings(args, version, config)
 end
 
-function export_preset(args, version, config)
-	-- The name of the export preset
-	name("Linux Release")
+function export_preset(args, version, config, platform)
+	local _name = ("%s %s %s"):format(platform, args.build_type, args.build_mode)
+	print(_name)
+	name(_name)
 	
 	-- build_type = get_build_type()
 	-- export_template(build_type, "folder/template_{build_type}")
 	-- export_template("debug", "file://...")
 	-- export_template("release", "file://...")
-
-	-- Unless the custom_template settings have been set, the 
-	-- platform function should verify that the export template
-	-- exists.
-	platform("Linux") -- will be set automatically
 
 	-- export everything
 	-- export_all()
@@ -102,16 +105,16 @@ function export_preset(args, version, config)
 	-- })
 
 	-- include non-resources by wildcard
-	include_filter({
-		"*.toml",
-		"*.ini"
-	})
+	-- include_filter({
+	-- 	"*.toml",
+	-- 	"*.ini"
+	-- })
 
 	-- exclude files and folders from export
-	exclude_filter({
-		"*.secret",
-		"dev_tools"
-	})
+	-- exclude_filter({
+	-- 	"*.secret",
+	-- 	"dev_tools"
+	-- })
 
 	-- script_export_mode("text") -- binary_token, compressed_binary_token
 	-- binary_format_architecture??

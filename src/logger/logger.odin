@@ -18,6 +18,7 @@ LogCategory :: enum {
     ARGS,
     CONFIG,
     GIT,
+    BUILD_TARGET,
     EXPORT_PRESET,
     PREPROCESS,
     ASSETS,
@@ -128,6 +129,8 @@ log_category_to_string :: proc(t: LogCategory) -> string {
         return "CONFIG"
     case .GIT:
         return "GIT"
+    case .BUILD_TARGET:
+        return "BUILD_TARGET"
     case .EXPORT_PRESET:
         return "EXPORT_PRESET"
     case .PREPROCESS:
